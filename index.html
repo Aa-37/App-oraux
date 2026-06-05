@@ -41,16 +41,19 @@ body {
   overflow-x: hidden;
 }
 
+/* Scrollbar */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #C9A84C55; border-radius: 4px; }
 
+/* Highlight effect */
 .hl {
   background: linear-gradient(105deg, #FAEDB5 0%, #F7E490 100%);
   padding: 1px 6px;
   border-radius: 3px;
 }
 
+/* Cards */
 .card {
   background: #fff;
   border-radius: 18px;
@@ -61,6 +64,7 @@ body {
   box-shadow: 0 4px 24px rgba(27,42,74,.12);
 }
 
+/* Animations */
 @keyframes fadeUp {
   from { opacity:0; transform:translateY(14px); }
   to   { opacity:1; transform:translateY(0); }
@@ -78,12 +82,17 @@ body {
   0%,100% { opacity:1; }
   50%      { opacity:.6; }
 }
+@keyframes ring-fill {
+  from { stroke-dashoffset: var(--dash-full); }
+  to   { stroke-dashoffset: var(--dash-target); }
+}
 
 .anim-up   { animation: fadeUp   .45s ease both; }
 .anim-side { animation: slideRight .4s ease both; }
 .anim-pop  { animation: popIn    .4s ease both; }
 .anim-pulse{ animation: pulse 2s ease infinite; }
 
+/* Accordion */
 .acc-body {
   display: grid;
   grid-template-rows: 0fr;
@@ -92,12 +101,14 @@ body {
 .acc-body.open { grid-template-rows: 1fr; }
 .acc-inner { overflow: hidden; }
 
+/* Timer ring */
 .timer-ring {
   transition: stroke-dashoffset 1s linear, stroke .6s ease;
   transform: rotate(-90deg);
   transform-origin: 70px 70px;
 }
 
+/* Checklist */
 .check-row {
   display: flex; align-items: flex-start; gap: 10px;
   cursor: pointer; padding: 6px 0;
@@ -121,6 +132,7 @@ body {
   background: #5C7A62;
 }
 
+/* Tag pills */
 .tag {
   font-size: 10px; font-weight: 600;
   padding: 2px 8px; border-radius: 20px;
@@ -135,6 +147,7 @@ body {
 .tag.Medical   { background:#CFFAFE; color:#155E75; }
 .tag.Familial  { background:#FCE7F3; color:#9D174D; }
 
+/* Nav */
 .nav-btn { position: relative; transition: opacity .2s; }
 .nav-btn.active::after {
   content:'';
@@ -146,6 +159,7 @@ body {
   background: #1B2A4A;
 }
 
+/* Toggle */
 .toggle-track {
   width: 46px; height: 26px; border-radius: 13px;
   background: #D1D5DB;
@@ -164,6 +178,7 @@ body {
 }
 .toggle-track.on .toggle-thumb { transform: translateX(20px); }
 
+/* Mastery select */
 .mastery-select {
   border: none; outline: none;
   border-radius: 8px;
@@ -173,6 +188,7 @@ body {
   font-family: 'DM Sans', sans-serif;
 }
 
+/* Jury popup */
 .jury-toast {
   position: fixed;
   top: 20px; left: 50%;
@@ -181,6 +197,7 @@ body {
   animation: popIn .4s ease both;
 }
 
+/* Button base */
 .btn {
   display: block; width: 100%;
   padding: 14px 20px;
@@ -204,28 +221,501 @@ body {
 <script type="text/babel">
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 
+/* ═══════════════════════════════════════════════════════
+   DATA
+═══════════════════════════════════════════════════════ */
+
 const SCENARIOS = [
-  { id:1, emoji:'👴', titre:'Le Grand-père raciste sur Facebook', tags:['Relationnel','Éthique'], matrice:'C' },
-  { id:2, emoji:'🍸', titre:'La sœur baby-sitter ivre', tags:['Urgence','Familial'], matrice:'A' },
-  { id:3, emoji:'💔', titre:'Les parents divorcés qui exigent de choisir', tags:['Familial','Relationnel'], matrice:'C' },
-  { id:4, emoji:'😴', titre:'L\'aidant familial qui s\'endort au volant', tags:['Urgence','Social'], matrice:'B' },
-  { id:5, emoji:'📱', titre:'L\'amie suicidaire après une soirée', tags:['Urgence','Santé'], matrice:'A' },
-  { id:6, emoji:'💻', titre:'Le cyberharcèlement par IA', tags:['Urgence','Sécurité'], matrice:'A' },
-  { id:7, emoji:'🛒', titre:'Le vol de nourriture au supermarché', tags:['Social','Précarité'], matrice:'B' },
-  { id:8, emoji:'🤍', titre:'L\'emprise conjugale', tags:['Urgence','Sécurité'], matrice:'A' },
-  { id:9, emoji:'🚨', titre:'Le voisin qui fait un malaise', tags:['Urgence','Médical'], matrice:'A' },
-  { id:10, emoji:'📝', titre:'La triche par désespoir', tags:['Éthique','Relationnel'], matrice:'C' },
-  { id:11, emoji:'🚗', titre:'L\'alcool au volant après soirée', tags:['Urgence','Sécurité'], matrice:'A' },
-  { id:12, emoji:'🚊', titre:'Le handicap invisible dans le tram', tags:['Social','Éthique'], matrice:'C' },
-  { id:13, emoji:'📲', titre:'L\'oncle et les fake news médicales', tags:['Santé','Éthique'], matrice:'C' },
-  { id:14, emoji:'👦', titre:'L\'enfant maltraité en baby-sitting', tags:['Urgence','Sécurité'], matrice:'A' },
-  { id:15, emoji:'📔', titre:'Le colocataire suicidaire', tags:['Urgence','Santé'], matrice:'A' },
-  { id:16, emoji:'🎰', titre:'L\'addiction et le chantage du coloc', tags:['Urgence','Sécurité'], matrice:'A' },
-  { id:17, emoji:'🏛️', titre:'Le propos raciste au guichet', tags:['Éthique','Social'], matrice:'C' },
-  { id:18, emoji:'🍖', titre:'La falsification au restaurant', tags:['Éthique','Sécurité'], matrice:'A' },
-  { id:19, emoji:'📋', titre:'L\'éthique et l\'assurance-vie', tags:['Éthique','Relationnel'], matrice:'C' },
-  { id:20, emoji:'🎭', titre:'La dérive sectaire amicale', tags:['Santé','Relationnel'], matrice:'C' }
+  {
+    id:1, emoji:'👴', probabilite:90,
+    titre:'Le Grand-père raciste sur Facebook',
+    tags:['Relationnel','Éthique'], matrice:'C',
+    enonce:'Un dimanche midi, le reflet bleu du téléphone brille sur les lunettes de ton grand-père. Sa page Facebook est ouverte : il publie des commentaires racistes en réaction à un article d\'actualité.',
+    hypothese:'Choc post-traumatique caché. Il a été agressé par deux personnes d\'origine étrangère il y a un mois et agit par colère traumatique, non par conviction profonde.',
+    correction_p1:'Grand I — Je me projette un dimanche midi dans le salon familial, l\'odeur du café embaume la pièce. Face à cette scène, je suis d\'emblée décontenancé et indigné. Physiquement, ma mâchoire se crispe, mais je me régule.\n\nGrand II — Pour me prémunir du biais fondamental d\'attribution, j\'émets l\'hypothèse d\'un Choc Post-Traumatique. En instaurant un climat de confiance à l\'écart, la carapace se fissure : il m\'avoue avoir été agressé il y a un mois.\n\nGrand III — Si je n\'agis pas, il continue de diffuser des propos illégaux (loi Pleven 1972). La décision est sans équivoque : j\'agis.\n\nGrand IV — Je ne le juge pas moralement. Je l\'accompagne au commissariat récupérer les vidéos de surveillance. Je l\'aide à supprimer les posts. Extra-Mile : le week-end suivant, je l\'invite dans un restaurant du pays en question pour briser les préjugés en douceur.\n\nGrand V — « Je suis satisfait que cette démarche ait permis à mon grand-père de dissiper son ressentiment et de renforcer notre lien. »',
+    questions_jury:[
+      'Et s\'il refuse catégoriquement de supprimer ses posts et dit que c\'est sa liberté d\'expression ?',
+      'S\'il vous dit que le restaurant c\'est une mauvaise idée et qu\'il n\'ira pas ?',
+      'Que faites-vous si vous découvrez qu\'il a continué à poster des contenus racistes après votre intervention ?'
+    ],
+    ripostes:[
+      'Avec le Disque Rayé : la loi Pleven de 1972 punit pénalement les propos haineux — ce n\'est pas une option mais un cadre légal. Je lui expose les conséquences concrètes sans m\'énerver, et lui propose de l\'aider à exprimer sa peur autrement.',
+      'Je m\'adapte : le lieu n\'est qu\'un vecteur. Je propose une alternative — un documentaire ensemble, ou rencontrer un voisin de confiance d\'origine étrangère. L\'objectif est de briser le préjugé, pas d\'imposer un endroit.',
+      'Je réévalue et passe le relais : un psychologue spécialisé en traumatismes peut aller là où je ne peux plus aller seul. Je ne m\'acharne pas mais je reste présent et disponible.'
+    ]
+  },
+  {
+    id:2, emoji:'🍸', probabilite:85,
+    titre:'La sœur baby-sitter ivre',
+    tags:['Urgence','Familial'], matrice:'A',
+    enonce:'Il est 20h30. Ta sœur titube dans le couloir, l\'odeur d\'alcool masque son parfum. Elle s\'apprête à partir garder les enfants de la famille voisine.',
+    hypothese:'Peur de décevoir. Elle a fêté le départ d\'une amie à midi, a sous-estimé l\'alcool, et n\'ose pas annuler par peur des reproches de la famille employeuse.',
+    correction_p1:'Grand I — Je me projette chez moi un soir d\'automne, les lumières du couloir éclairent ma sœur chancelante. Je suis alarmé par le risque pour les enfants, tout en ressentant de la compassion. Physiquement, mon sang se glace.\n\nGrand II — J\'émets l\'hypothèse d\'une Peur de Décevoir intense. Face à mon écoute, elle m\'avoue avoir fêté un départ et ne plus oser reculer.\n\nGrand III — Des enfants sous la garde d\'une personne ivre = urgence vitale. La décision est sans équivoque.\n\nGrand IV — Je lui interdis de partir fermement mais sans violence. J\'appelle moi-même les parents voisins, en inventant un empêchement soudain pour ma sœur. Je me propose de la remplacer. Je la mets au lit avec un grand verre d\'eau.\n\nGrand V — « Je suis satisfait que cette démarche ait permis à ma sœur d\'être hors de danger et que les enfants soient en sécurité. »',
+    questions_jury:[
+      'Et si votre sœur s\'emporte et insiste pour partir malgré vous ?',
+      'Les parents voisins vous posent des questions sur l\'état réel de votre sœur. Que répondez-vous ?',
+      'Le lendemain, comment abordez-vous ce sujet avec elle ?'
+    ],
+    ripostes:[
+      'Je reste ferme sans violence. Si elle devient agressive, j\'appelle un parent adulte pour renforcer l\'intervention. Je lui dis clairement que je l\'aime et que c\'est précisément pour ça que je l\'en empêche.',
+      'Je protège sa dignité : je ne révèle pas son état. Je dis qu\'elle a un empêchement soudain et que je suis ravi de prendre le relais. La vérité lui appartient.',
+      'Le lendemain matin, avec des croissants, dans un moment bienveillant. Je n\'accuse pas, j\'exprime comment j\'ai ressenti la situation. Si ce n\'est pas un incident isolé, je l\'invite à en parler avec quelqu\'un de professionnel.'
+    ]
+  },
+  {
+    id:3, emoji:'💔', probabilite:80,
+    titre:'Les parents divorcés qui exigent de choisir',
+    tags:['Familial','Relationnel'], matrice:'C',
+    enonce:'Le visage rouge de colère de ton frère, le silence glaçant de ton père dans le salon. Tes parents divorcés te mettent en demeure de choisir un camp lors d\'une réunion familiale.',
+    hypothese:'Malentendu et vengeance. Le père a trompé la mère, elle l\'insulte au téléphone, et chaque parent tente de rallier les enfants à sa cause.',
+    correction_p1:'Grand I — Je me projette dans le salon familial un dimanche, la tension est palpable. Je suis décontenancé par cette mise en demeure et ressens un sentiment d\'injustice profond. Physiquement, ma gorge se noue.\n\nGrand II — J\'émets l\'hypothèse d\'un profond malentendu et d\'une souffrance mutuelle non exprimée de part et d\'autre.\n\nGrand III — Si je choisis un camp, je déchire la famille. Si je refuse, je risque de mécontenter les deux. Ma décision est sans équivoque : je refuse de choisir.\n\nGrand IV — J\'use d\'une assertivité bienveillante. Je propose un compromis logistique concret : ayant récemment eu mon permis, je ferai le taxi pour mes frères et sœurs entre les deux maisons. En échange, mes parents financent l\'essence.\n\nGrand V — « Je suis satisfait que ce compromis ait permis de dissiper le malentendu et de préserver notre cohésion familiale. »',
+    questions_jury:[
+      'Et si votre père vous dit que votre mère ment sur tout et que vous devez prendre parti ?',
+      'Votre frère, très proche de vous, vous dit en privé qu\'il choisit le camp de la mère. Que faites-vous ?',
+      'Comment gérez-vous la situation si le conflit s\'envenime lors d\'un repas de famille ?'
+    ],
+    ripostes:[
+      'Je maintiens ma position avec le Disque Rayé. Je lui dis que je l\'aime et que c\'est précisément pourquoi je refuse de devenir un instrument de la séparation. Mon jugement m\'appartient.',
+      'Je respecte sa liberté sans la valider. Je lui explique les conséquences à long terme sur ses relations avec l\'autre parent et reste disponible sans cautionner ce choix.',
+      'J\'use de l\'humour pour désamorcer la tension immédiate. Si l\'escalade persiste, je propose une pause — sortir, un café — pour casser la dynamique conflictuelle avant de reprendre.'
+    ]
+  },
+  {
+    id:4, emoji:'😴', probabilite:90,
+    titre:'L\'aidant familial qui s\'endort au volant',
+    tags:['Urgence','Social'], matrice:'B',
+    enonce:'Les yeux de ton ami sont rougis et vides au volant. La voiture mord la ligne blanche. Il s\'occupe de sa mère malade toutes les nuits.',
+    hypothese:'Le Joker de l\'Aidant Familial. Il s\'occupe de sa mère atteinte de cancer la nuit et n\'a pas dormi depuis 72 heures.',
+    correction_p1:'Grand I — Je me projette dans la voiture de mon ami en fin d\'après-midi, la route devant nous. Ses yeux rougis et la voiture qui dévie me terrifient et m\'emplissent de compassion. Mon cœur s\'accélère.\n\nGrand II — L\'hypothèse s\'impose : Épuisement Extrême lié à l\'aidance. Face à mon écoute, le masque tombe : 72 heures sans sommeil à veiller sa mère.\n\nGrand III — Un accident mortel est l\'issue sans intervention. J\'agis immédiatement.\n\nGrand IV — Je lui ordonne de s\'arrêter sur l\'accotement et je prends le volant d\'autorité. Je l\'oriente vers une Assistante Sociale du CCAS pour obtenir une infirmière à domicile financée par l\'APA. Extra-Mile : je tape ses fiches de révision pour soulager sa charge mentale.\n\nGrand V — « Je suis soulagé que cette démarche ait permis à mon ami de stabiliser sa situation et de reprendre ses études sereinement. »',
+    questions_jury:[
+      'Il refuse de s\'arrêter et dit que tout va bien. Que faites-vous ?',
+      'Il vous dit que sa famille ne peut pas se permettre une infirmière à domicile financièrement.',
+      'Comment gérez-vous votre propre charge émotionnelle face à une telle situation ?'
+    ],
+    ripostes:[
+      'Je reste ferme. Je lui dis que je vois physiquement qu\'il n\'est pas en état. Si nécessaire, je pose ma main sur le volant pour signifier concrètement la gravité. La sécurité de nos vies passe avant son déni.',
+      'C\'est précisément le rôle du CCAS : évaluer les aides auxquelles la famille a droit, comme l\'APA (Allocation Personnalisée d\'Autonomie) ou le PCH, qui peuvent financer une aide à domicile. L\'argent ne doit pas être un obstacle.',
+      'Un soignant épuisé est inutile — cela vaut aussi pour un ami. Je pose des limites claires sur ce que je peux offrir et je passe le relais aux professionnels pour ce qui me dépasse.'
+    ]
+  },
+  {
+    id:5, emoji:'📱', probabilite:95,
+    titre:'L\'amie suicidaire après une soirée',
+    tags:['Urgence','Santé'], matrice:'A',
+    enonce:'Un appel à 2h du matin, la voix pâteuse et les pleurs au téléphone. Le lendemain, silence radio total de ton amie.',
+    hypothese:'Dépression masquée suite à une rupture amoureuse brutale survenue il y a 3 mois, cachée derrière l\'alcool et les fêtes.',
+    correction_p1:'Grand I — Je me projette dans ma chambre à 2h du matin, mon téléphone vibre. Je reconnais la voix brisée de mon amie. Je suis alarmé et bouleversé. Mes mains tremblent légèrement.\n\nGrand II — J\'émets l\'hypothèse d\'une Dépression masquée. Face à mon écoute active, les masques tombent : une rupture il y a 3 mois, cachée derrière l\'alcool.\n\nGrand III — Urgence Vitale. L\'inaction est inconcevable. J\'agis immédiatement.\n\nGrand IV — Je prends le train le matin même sans l\'appeler d\'abord — je viens. Je débarque dans sa chambre. J\'organise un déjeuner avec sa grande sœur. Je l\'inscris avec moi à des séances de thérapie de groupe et je configure le 3114 en numéro favori sur son téléphone.\n\nGrand V — « Je suis soulagé qu\'elle soit hors de danger et se sente enfin soutenue. »',
+    questions_jury:[
+      'Elle vous répond qu\'elle va bien et vous demande de ne pas venir.',
+      'Devez-vous briser le secret et prévenir ses parents sans son accord ?',
+      'Vous n\'avez pas l\'argent pour prendre le train ce matin-là. Que faites-vous ?'
+    ],
+    ripostes:[
+      'Je ne la crois pas. Idées suicidaires exprimées + silence radio = urgence. Je lui dis que je l\'entends, mais que je viens quand même parce que je l\'aime. Ma présence physique n\'est pas négociable.',
+      'C\'est un cas de danger vital imminent qui autorise le bris du secret. Je préviens le parent avec qui elle a le meilleur lien, et je lui dis avant de le faire pour préserver la confiance.',
+      'Je mobilise toutes les ressources : emprunter l\'argent, trouver un ami dans sa ville pour qu\'il aille la voir immédiatement, et appeler le 3114 pour des conseils professionnels à distance.'
+    ]
+  },
+  {
+    id:6, emoji:'💻', probabilite:90,
+    titre:'Le cyberharcèlement par IA',
+    tags:['Urgence','Sécurité'], matrice:'A',
+    enonce:'Le groupe WhatsApp de ta promo de L1 s\'emballe. Une photo truquée et dégradante d\'une camarade excellente élève circule, générée par IA.',
+    hypothese:'Harcèlement destructeur visant à isoler une excellente élève par jalousie de groupe.',
+    correction_p1:'Grand I — Je me projette dans ma chambre un soir de semaine, mon téléphone vibre de notifications. Je découvre la photo truquée dans le groupe. Je suis immédiatement révolté et sidéré. Ma mâchoire se crispe.\n\nGrand II — J\'émets l\'hypothèse d\'un Harcèlement destructeur motivé par la jalousie. En isolation dans un espace calme, la victime me confirme que les messages durent depuis des semaines.\n\nGrand III — L\'inaction équivaut à complicité. J\'agis immédiatement.\n\nGrand IV — J\'isole la victime hors du groupe WhatsApp. Je fais des captures d\'écran de toutes les preuves. Je la guide vers le 3018 (numéro national anti-cyberharcèlement). Je l\'accompagne au SIMPPS. Extra-Mile : je lui propose de travailler en binôme tout le semestre pour recréer un cocon social sécurisant.\n\nGrand V — « Je suis satisfait que mon amie ne soit plus isolée et se sente protégée. »',
+    questions_jury:[
+      'Les autres membres du groupe disent que c\'est juste une blague. Comment répondez-vous ?',
+      'Elle vous demande de ne rien faire car elle a peur des représailles.',
+      'Quel est le rôle de l\'établissement dans cette situation ?'
+    ],
+    ripostes:[
+      'Avec le Disque Rayé : un deepfake à caractère dégradant d\'une personne réelle est un délit pénal. Ce n\'est pas une blague, c\'est puni par la loi. Je maintiens cette position sans m\'énerver.',
+      'Je respecte sa peur mais lui explique que l\'inaction aggrave la situation. Je lui propose un signalement anonyme sur la plateforme Pharos. Sa sécurité est la priorité.',
+      'L\'établissement a une obligation légale de traiter le harcèlement entre étudiants. Je l\'aide à formuler un signalement auprès du référent harcèlement de la faculté, qui peut activer une procédure disciplinaire.'
+    ]
+  },
+  {
+    id:7, emoji:'🛒', probabilite:85,
+    titre:'Le vol de nourriture au supermarché',
+    tags:['Social','Précarité'], matrice:'B',
+    enonce:'Une étudiante de ton TD glisse furtivement des pâtes et des tampons dans la doublure de sa veste dans le supermarché du quartier.',
+    hypothese:'Précarité absolue. Ses parents ont coupé les vivres, elle ne mange plus qu\'un jour sur deux.',
+    correction_p1:'Grand I — Je me projette un mercredi après-midi dans le supermarché près de la fac. Je vois ma camarade glisser des articles dans sa veste. Je suis bouleversé par la détresse que cela révèle. Ma gorge se noue.\n\nGrand II — J\'émets l\'hypothèse d\'une Urgence Sociale et Précarité absolue. En créant un espace de confiance à l\'écart du rayon, elle m\'avoue ne manger qu\'un jour sur deux.\n\nGrand III — Si je n\'agis pas, elle risque une interpellation humiliante. J\'agis avec discrétion.\n\nGrand IV — Je règle la note discrètement en prétextant une erreur de caissière. Je l\'oriente vers le CROUS et le Fonds de Solidarité Étudiante. Extra-Mile : le soir, je lui prépare trois boîtes Tupperware avec des repas chauds pour sa semaine.\n\nGrand V — « Je suis soulagé que cette démarche ait permis à mon amie de stabiliser sa situation et de reprendre ses études sereinement. »',
+    questions_jury:[
+      'Le vigile a vu la scène et s\'approche. Que faites-vous ?',
+      'Elle refuse votre aide et dit qu\'elle gère très bien.',
+      'Est-ce que vous cautionnez moralement le vol ?'
+    ],
+    ripostes:[
+      'J\'interviens immédiatement auprès du vigile : je dis que mon amie a oublié ces articles en caisse et je propose de régler sur-le-champ. Je prends la responsabilité pour préserver sa dignité.',
+      'Je respecte son refus mais ne l\'abandonne pas. Je lui laisse les coordonnées du CROUS. Je lui dis que mon offre reste valable. Je reviens vers elle quelques jours plus tard.',
+      'Non. Le vol est répréhensible. Mais je comprends la cause : un instinct de survie face à une détresse extrême. Mon rôle n\'est pas de juger, mais d\'agir pour que cet acte ne soit plus jamais nécessaire.'
+    ]
+  },
+  {
+    id:8, emoji:'🤍', probabilite:85,
+    titre:'L\'emprise conjugale',
+    tags:['Urgence','Sécurité'], matrice:'A',
+    enonce:'En plein mois de juillet à 30°C, ton amie ajuste nerveusement son col roulé couvrant son cou et ses bras. Son comportement a profondément changé depuis quelques mois.',
+    hypothese:'Violences conjugales physiques et psychologiques. Elle cache des marques et vit sous emprise.',
+    correction_p1:'Grand I — Je me projette un après-midi d\'été en terrasse. Son col roulé par 30°C m\'alarme profondément. Je ressens une angoisse diffuse. Mon cœur se serre.\n\nGrand II — J\'émets l\'hypothèse d\'une Emprise et Harcèlement. En l\'emmenant à l\'écart, dans un lieu sécurisé, les masques tombent : elle m\'avoue subir des violences de son conjoint.\n\nGrand III — Chaque jour d\'inaction est un danger supplémentaire. J\'agis.\n\nGrand IV — Je lui propose de lui préparer une chambre d\'ami pour ce soir si elle le souhaite. Je lui donne le 3919 (Violence Femmes Info). Je l\'accompagne à l\'UHVS si elle accepte un bilan médical.\n\nGrand V — « Je me réjouis qu\'elle soit enfin hors de danger et qu\'un relais professionnel soit en place. »',
+    questions_jury:[
+      'Elle refuse de quitter son conjoint et dit qu\'elle l\'aime.',
+      'Devez-vous aller confronter le conjoint ?',
+      'Elle a des enfants avec lui. Comment cela change-t-il votre approche ?'
+    ],
+    ripostes:[
+      'Je respecte sa décision sans la juger — l\'emprise est un mécanisme psychologique complexe. Je lui dis que mon aide reste disponible 24h/24 et que la prochaine fois qu\'elle est en danger, elle peut m\'appeler. Je plante des graines.',
+      'Non, absolument pas. Confronter l\'auteur de violences peut mettre la victime en danger immédiat. Je laisse cette démarche aux professionnels. Mon rôle est d\'être son filet de sécurité, pas d\'escalader le conflit.',
+      'La présence d\'enfants renforce l\'urgence : des enfants témoins de violences conjugales sont eux-mêmes des victimes au regard de la loi. Je mentionne spécifiquement le 119 pour la protection des mineurs.'
+    ]
+  },
+  {
+    id:9, emoji:'🚨', probabilite:90,
+    titre:'Le voisin qui fait un malaise',
+    tags:['Urgence','Médical'], matrice:'A',
+    enonce:'Un cri strident à travers le mur de ton appartement, puis le pleur ininterrompu d\'un petit garçon de 8 ans. Le silence s\'installe.',
+    hypothese:'Urgence médicale (infarctus ou malaise de la mère seule avec son enfant, le père est au travail).',
+    correction_p1:'Grand I — Je me projette chez moi un soir ordinaire quand un cri traverse le mur. Je suis immédiatement terrifié. Mes jambes se mobilisent instinctivement.\n\nGrand II — L\'hypothèse est claire : urgence médicale vitale. Je n\'ai pas le luxe d\'attendre.\n\nGrand III — L\'inaction peut coûter une vie. J\'agis immédiatement.\n\nGrand IV — J\'appelle le 15 (SAMU) en donnant tous les détails. Je cours chercher le voisin serrurier du dessus pour ouvrir la porte sans violence. En attendant les secours, je protège le petit Théo : je l\'installe dans ma chambre avec des dessins animés et des glaces pour le protéger du choc visuel. Je contacte le père. Extra-Mile : je contacte le syndic pour organiser une formation « Gestes qui sauvent ».\n\nGrand V — « Je suis soulagé que cette intervention rapide ait permis une prise en charge médicale à temps. »',
+    questions_jury:[
+      'Vous n\'avez pas de voisin serrurier. Comment ouvrez-vous la porte ?',
+      'Vous pratiquez les gestes de premiers secours mais vous n\'êtes pas sûr. Que faites-vous ?',
+      'L\'enfant vous pose des questions sur l\'état de sa mère. Que lui dites-vous ?'
+    ],
+    ripostes:[
+      'J\'appelle le 18 (pompiers) qui peuvent forcer la porte rapidement. Si j\'entends encore des signes de vie, je parle à travers la porte pour rassurer en attendant.',
+      'Je suis les instructions du médecin régulateur du 15 en temps réel. Il me guidera pas à pas. Je ne suis pas seul — le régulateur est là pour ça.',
+      'Je lui dis la vérité avec des mots adaptés à son âge : « Ta maman s\'est sentie mal et les docteurs sont venus très vite pour l\'aider. Tu es en sécurité avec moi. » Je ne lui mens pas mais je le protège.'
+    ]
+  },
+  {
+    id:10, emoji:'📝', probabilite:80,
+    titre:'La triche par désespoir',
+    tags:['Éthique','Relationnel'], matrice:'C',
+    enonce:'À la bibliothèque Arsenal, tu vois la main de ton camarade glisser une fiche de triche dans sa manche avant l\'examen partiel décisif.',
+    hypothese:'Syndrome de l\'imposteur et peur de décevoir. Il est terrorisé à l\'idée d\'échouer et de décevoir sa famille.',
+    correction_p1:'Grand I — Je me projette à l\'Arsenal un matin d\'examen, l\'atmosphère est tendue. Je vois le geste de mon camarade. Je suis décontenancé et partagé entre l\'amitié et mes valeurs. Mon estomac se noue.\n\nGrand II — J\'émets l\'hypothèse du Syndrome de l\'Imposteur et d\'une Peur de décevoir écrasante. En l\'emmenant à l\'écart, il m\'avoue la pression familiale insupportable.\n\nGrand III — Cautionner sa triche met en danger son avenir et mon intégrité. Je dois agir.\n\nGrand IV — Avec assertivité mais bienveillance, je lui demande de ranger la fiche. Mais je ne l\'abandonne pas : j\'achète des pizzas et on passe une nuit blanche commando ensemble pour revoir tout le programme de façon éthique.\n\nGrand V — « Je me réjouis que ce choix éthique ait renforcé notre amitié et sa confiance en lui. »',
+    questions_jury:[
+      'Il vous dit que vous n\'êtes pas son père et que ce ne sont pas vos affaires.',
+      'Vous découvrez que plusieurs camarades trichent. Devez-vous tous les dénoncer ?',
+      'Si vous ne le signalez pas à l\'administration, êtes-vous complice ?'
+    ],
+    ripostes:[
+      'C\'est vrai — ce n\'est pas mon rôle d\'être son père. Mais c\'est mon rôle d\'ami de lui dire la vérité. Je lui expose les risques concrets : exclusion, annulation des notes. Puis je lui laisse le choix.',
+      'Mon premier acte est de parler directement à mon camarade, pas à l\'administration. La dénonciation systématique n\'est pas mon rôle — c\'est à l\'établissement de mettre en place des contrôles.',
+      'Non. Je ne suis pas complice si j\'ai clairement exprimé mon désaccord et tenté d\'agir. La complicité nécessite une participation active. J\'ai fait ce qui m\'appartient : l\'intervention directe et bienveillante.'
+    ]
+  },
+  {
+    id:11, emoji:'🚗', probabilite:90,
+    titre:'L\'alcool au volant après soirée',
+    tags:['Urgence','Sécurité'], matrice:'A',
+    enonce:'À la fin d\'une soirée étudiante, ton ami cherche ses clés de voiture en chancelant. Il insiste pour rentrer seul en conduisant malgré son état.',
+    hypothese:'Effet iatrogène de l\'alcool — perte du cortex préfrontal et irrationalité totale. Il ne mesure pas le danger.',
+    correction_p1:'Grand I — Je me projette à la sortie d\'une soirée, les lumières de la rue s\'allument. Mon ami titube en sortant ses clés. Je suis alarmé et déterminé. Je me mets physiquement entre lui et sa voiture.\n\nGrand II — L\'hypothèse est médicalement claire : l\'alcool a désactivé son jugement. Il ne peut pas évaluer le danger objectivement.\n\nGrand III — Un accident mortel est l\'issue sans intervention. J\'agis immédiatement.\n\nGrand IV — Je fais semblant de vouloir essayer sa veste — et je récupère ses clés. Je lui commande un Uber sur mon propre compte et je l\'y installe. Extra-Mile : le lendemain matin, je débarque chez lui avec des croissants et ses clés, et un alcootest pédagogique pour qu\'on en parle sereinement.\n\nGrand V — « Je suis soulagé que mon intervention ait permis d\'éviter un drame et de sensibiliser mon ami durablement. »',
+    questions_jury:[
+      'Il réalise que vous avez pris ses clés et il s\'emporte violemment.',
+      'Il dit qu\'il conduit mieux sous l\'alcool car il est plus concentré.',
+      'Vous êtes vous-même un peu alcoolisé ce soir-là. Est-ce que ça change quelque chose ?'
+    ],
+    ripostes:[
+      'Je reste calme. Sa colère de ce soir, je la préfère infiniment à ses larmes ou à celles de sa famille demain. Je tiens ferme. Si l\'agression devient physique, je prends du recul et appelle de l\'aide.',
+      'Je lui explique sans condescendance ce que l\'alcool fait réellement : il crée une illusion de compétence en anesthésiant la conscience du danger. Précisément ce qu\'il ressent est le signe qu\'il ne devrait pas conduire.',
+      'Ça change mon mode d\'action, pas mon objectif. Même légèrement alcoolisé, je suis en meilleure condition que lui. J\'appelle un ami sobre ou je commande l\'Uber sans conduire moi-même.'
+    ]
+  },
+  {
+    id:12, emoji:'🚊', probabilite:85,
+    titre:'Le handicap invisible dans le tram',
+    tags:['Social','Éthique'], matrice:'C',
+    enonce:'Dans le tramway bondé, un jeune homme athlétique reste assis sur une place prioritaire pendant qu\'une femme enceinte reste debout. Les autres passagers l\'agressent verbalement.',
+    hypothese:'Handicap invisible — prothèse ou maladie neuro-dégénérative (SLA, SEP) — doublé de la terreur du jugement public.',
+    correction_p1:'Grand I — Je me projette dans le tramway un mardi matin chargé. Je suis décontenancé par la scène et indigné face aux réactions agressives des passagers. Physiquement, ma mâchoire se crispe.\n\nGrand II — Je m\'interdis le jugement hâtif. J\'émets l\'hypothèse d\'un Handicap Invisible. En m\'approchant à voix basse, il m\'avoue porter une prothèse et avoir peur d\'être jugé s\'il l\'avoue publiquement.\n\nGrand III — Si je n\'agis pas, l\'injustice perdure doublement. J\'agis.\n\nGrand IV — Je détourne l\'attention de la foule avec une légère blague. Je cède ma propre place à la femme enceinte. Je m\'assoie par terre à côté du jeune homme pour lui parler à voix basse. Extra-Mile : je lui indique la procédure MDPH pour obtenir une carte de priorité discrète.\n\nGrand V — « Je me réjouis que cette intervention ait dissipé l\'injustice tout en préservant la dignité de chacun. »',
+    questions_jury:[
+      'Les passagers vous reprochent de défendre quelqu\'un qui ne mérite pas sa place.',
+      'Le jeune homme vous demande de ne pas révéler son handicap à quiconque.',
+      'La femme enceinte refuse votre place et soutient la foule contre lui.'
+    ],
+    ripostes:[
+      'Je rappelle avec calme que la loi protège les personnes à mobilité réduite et que nous ne pouvons pas juger l\'état de santé d\'un individu à son apparence. Je maintiens ma position avec le Disque Rayé.',
+      'Je le respecte absolument. Sa vie privée médicale lui appartient. Je n\'ai pas divulgué son handicap — j\'ai agi pour sa protection. La carte MDPH lui permettra d\'éviter ces situations à l\'avenir.',
+      'Je lui offre quand même ma place. Si elle refuse, je reste debout près d\'elle pour lui offrir un appui physique. Son refus ne change pas le fait que j\'ai agi avec équité.'
+    ]
+  },
+  {
+    id:13, emoji:'📲', probabilite:85,
+    titre:'L\'oncle et les fake news médicales',
+    tags:['Santé','Éthique'], matrice:'C',
+    enonce:'La vidéo TikTok complotiste tourne en boucle sur la tablette de ton oncle au repas dominical. Il refuse son traitement cardiaque et cite des « médecins alternatifs » sur les réseaux.',
+    hypothese:'Déni de maladie par peur des effets secondaires (impuissance, prise de poids). Il se réfugie dans le complotisme pour éviter d\'affronter sa maladie.',
+    correction_p1:'Grand I — Je me projette au repas dominical, la tablette de mon oncle trône sur la table. Je suis décontenancé et profondément inquiet pour sa santé. Mon estomac se noue.\n\nGrand II — J\'émets l\'hypothèse d\'un Déni de maladie lié à la peur des effets secondaires. Sans condescendance, j\'aborde ses vraies angoisses.\n\nGrand III — Son refus de traitement peut avoir des conséquences vitales. J\'agis avec diplomatie.\n\nGrand IV — Pas de condescendance. Je lui propose de l\'accompagner chez son cardiologue pour aborder ensemble un éventuel changement de molécule (EBM). Je lui achète un livre de vulgarisation d\'un expert reconnu. Extra-Mile : je l\'invite à marcher en forêt pour parler de ses vraies angoisses sans pression.\n\nGrand V — « Je suis satisfait que cette approche respectueuse ait permis à mon oncle d\'ouvrir le dialogue avec son médecin. »',
+    questions_jury:[
+      'Il vous dit que vous êtes trop jeune pour comprendre et que les médecins ne pensent qu\'à l\'argent.',
+      'Son médecin traitant n\'a jamais discuté des effets secondaires avec lui. Que pensez-vous de ça ?',
+      'Devez-vous prévenir quelqu\'un si son état se dégrade par refus de soin ?'
+    ],
+    ripostes:[
+      'Je valide son sentiment — la défiance peut venir d\'expériences réelles. Mais je lui propose un pari : aller ensemble chercher un deuxième avis auprès d\'un médecin qu\'il choisit lui-même. Je ne lui impose pas ma vérité, je l\'invite à chercher la sienne.',
+      'C\'est un point valide. L\'EBM exige que le médecin informe des effets secondaires. Je l\'aide à préparer une liste de questions précises pour sa prochaine consultation. Son scepticisme est en partie légitime.',
+      'Si son état se dégrade de façon vitale et qu\'il est hors d\'état de décider, je peux en informer le SAMU ou son médecin. En dehors de l\'urgence vitale, son droit au refus de soin est protégé par la loi.'
+    ]
+  },
+  {
+    id:14, emoji:'👦', probabilite:85,
+    titre:'L\'enfant maltraité en baby-sitting',
+    tags:['Urgence','Sécurité'], matrice:'A',
+    enonce:'Le petit Léo, 8 ans, garde son pull en plein mois d\'août et sursaute violemment quand tu lèves la main pour attraper un livre.',
+    hypothese:'Violences intrafamiliales ou racket violent à l\'école. Il cache des marques et vit dans la peur.',
+    correction_p1:'Grand I — Je me projette lors d\'une séance de baby-sitting un soir d\'été. Le pull de Léo malgré la chaleur, ses sursauts, m\'alarment profondément. Je suis bouleversé et accablé par ce que je pressens.\n\nGrand II — L\'hypothèse de violences physiques me saute aux yeux. En créant un espace de jeu sécurisant, il commence à parler.\n\nGrand III — Un enfant en danger est une urgence absolue. J\'agis immédiatement.\n\nGrand IV — Je m\'assoie avec lui autour d\'un jeu de Lego pour créer un safe space. S\'il avoue des violences familiales, je signale au 119 (Enfance en danger) sans alerter les parents. S\'il avoue du racket, j\'accompagne les parents au bureau du directeur le lendemain matin.\n\nGrand V — « Je suis soulagé que Léo soit enfin protégé et que les adultes responsables soient informés. »',
+    questions_jury:[
+      'Les parents rentrent et vous demandent ce que vous avez fait pendant la soirée. Leur dites-vous ce qui s\'est passé ?',
+      'Léo vous demande de garder le secret. Que faites-vous ?',
+      'Vous n\'êtes pas certain d\'avoir bien interprété les signes. Devez-vous quand même signaler ?'
+    ],
+    ripostes:[
+      'Ça dépend de la source des violences. Si ce sont les parents qui sont les auteurs, je ne leur dis rien et j\'appelle le 119 sans tarder. Si c\'est un tiers, je peux en parler au parent le plus réceptif.',
+      'Je lui explique avec douceur qu\'il y a des secrets qu\'on ne peut pas garder quand ils font du mal. Le garder, ce n\'est pas le trahir — c\'est le protéger. Je resterai à ses côtés.',
+      'Oui. Le 119 est là pour évaluer les situations incertaines. Je n\'ai pas besoin de certitude pour signaler — j\'ai besoin d\'un faisceau d\'indices. Les professionnels feront l\'évaluation.'
+    ]
+  },
+  {
+    id:15, emoji:'📔', probabilite:85,
+    titre:'Le colocataire suicidaire',
+    tags:['Urgence','Santé'], matrice:'A',
+    enonce:'En rangeant l\'appartement, tu découvres le carnet intime de ton colocataire ouvert sur une page exprimant un désir de mourir. Ce soir, il semble particulièrement absent.',
+    hypothese:'Risque suicidaire imminent. Il souffre en silence depuis des semaines derrière un masque de normalité.',
+    correction_p1:'Grand I — Je me projette dans notre appartement en rangeant. Je découvre le carnet ouvert. Je suis immédiatement terrifié et bouleversé. Mes mains tremblent.\n\nGrand II — L\'hypothèse est claire : risque suicidaire imminent. Je n\'ai pas le droit à l\'erreur.\n\nGrand III — Urgence vitale absolue. J\'agis immédiatement.\n\nGrand IV — Je vais directement le voir sans détour. Je ne lui parle pas du carnet d\'emblée. Je lui dis que je remarque qu\'il va mal depuis un moment et que je suis là. Si les idées suicidaires sont confirmées, je contacte le 3114 avec lui. Je l\'accompagne au SIMPPS dès demain. Je ne le quitte pas de la nuit.\n\nGrand V — « Je me réjouis que mon intervention ait permis de mettre en place un suivi professionnel et de sauver peut-être une vie. »',
+    questions_jury:[
+      'Il nie tout et dit que ce carnet était de la fiction.',
+      'Devez-vous alerter ses parents sans son consentement ?',
+      'Comment gérez-vous votre propre trauma émotionnel après une telle soirée ?'
+    ],
+    ripostes:[
+      'Je n\'entre pas dans un débat sur le carnet. Je reste sur ce que j\'observe : son comportement ce soir, son absence. Je lui dis que fiction ou non, je suis là. Je reste présent et attentif.',
+      'En cas de danger vital imminent confirmé, oui. Je lui dis avant de le faire : « Je dois le dire à quelqu\'un qui peut t\'aider mieux que moi ce soir. » Pour maintenir la confiance.',
+      'Je reconnais que cette situation me touche profondément. Après m\'être assuré qu\'il est en sécurité, je contacte Nightline Étudiante ou un proche. Je ne garde pas ça seul. Prendre soin de moi me permet de continuer à prendre soin de lui.'
+    ]
+  },
+  {
+    id:16, emoji:'🎰', probabilite:80,
+    titre:'L\'addiction et le chantage du coloc',
+    tags:['Urgence','Sécurité'], matrice:'A',
+    enonce:'Ton colocataire au ton agressif et aux yeux fuyants exige ton code de carte bleue. Il a des dettes de poker en ligne.',
+    hypothese:'Emprise des dettes de jeu en ligne. Addiction sévère avec comportement de chantage.',
+    correction_p1:'Grand I — Je me projette chez moi un soir, mon colocataire m\'aborde de façon menaçante. Je suis alarmé et sidéré par ce changement de comportement. Physiquement, je me tiens en retrait par instinct.\n\nGrand II — J\'émets l\'hypothèse d\'une Addiction sévère aux jeux d\'argent en ligne. En l\'asseyant, il avoue des dettes colossales et une pression insupportable.\n\nGrand III — Donner mon code cautionne l\'addiction et met ma sécurité en danger. Je refuse. J\'agis autrement.\n\nGrand IV — Refus absolu de prêter un euro. Je l\'assoie et je confisque ses accès aux sites de paris. Je l\'emmène personnellement jusqu\'au CSAPA. Nous montons ensemble un dossier de surendettement auprès d\'une assistante sociale pour geler les dettes.\n\nGrand V — « Je me réjouis que cette intervention ait permis à mon colocataire d\'entamer un parcours de soin. »',
+    questions_jury:[
+      'Il menace de vous blesser si vous ne lui donnez pas l\'argent.',
+      'Après votre refus, il sort de l\'appartement en courant. Que faites-vous ?',
+      'Vous découvrez qu\'il a déjà volé de l\'argent dans votre chambre.'
+    ],
+    ripostes:[
+      'Ma sécurité prime sur tout. Je me mets à distance physique et je compose le 17 (Police). Une menace physique transforme la situation en urgence de sécurité publique que je ne peux pas gérer seul.',
+      'Je reste calme. Je lui envoie un message bienveillant pour lui dire que ma porte reste ouverte et que je ne le juge pas. Je contacte discrètement un proche de confiance pour qu\'on soit plusieurs à l\'entourer.',
+      'Ça change les termes de notre relation. Je peux déposer une plainte — non par vengeance, mais parce que la loi l\'impose et parce que ça peut l\'aider à prendre conscience de la gravité.'
+    ]
+  },
+  {
+    id:17, emoji:'🏛️', probabilite:75,
+    titre:'Le propos raciste au guichet',
+    tags:['Éthique','Social'], matrice:'C',
+    enonce:'En mairie, un client hurle des insultes racistes sur l\'agent d\'accueil d\'origine étrangère. La salle d\'attente entière est tétanisée.',
+    hypothese:'Variabilité socioculturelle toxique et transfert émotionnel. Le client est frustré d\'une longue attente et décharge sa rage sur un bouc émissaire.',
+    correction_p1:'Grand I — Je me projette dans la salle d\'attente de la mairie, l\'ambiance est lourde. Je suis immédiatement révolté et indigné face aux propos racistes. Physiquement, ma mâchoire se crispe, je me régule.\n\nGrand II — J\'émets l\'hypothèse d\'un Transfert émotionnel toxique. La racine est la frustration, pas la conviction.\n\nGrand III — Rester passif, c\'est cautionner. J\'agis.\n\nGrand IV — Interposition corporelle pacifique entre le client et l\'agent. Je rappelle la loi pénale au client avec le Disque Rayé. Je l\'invite à reformuler sa demande calmement. J\'accompagne ensuite l\'agent faire une pause. Extra-Mile : je me propose comme témoin officiel pour la main courante et lui offre un café pour décompresser.\n\nGrand V — « Je suis satisfait que cette intervention ait permis à l\'agent de se sentir soutenu et protégé. »',
+    questions_jury:[
+      'Le client vous répond qu\'il a le droit de dire ce qu\'il pense.',
+      'L\'agent vous remercie mais dit qu\'il préfère gérer seul car vous aggravez la situation.',
+      'Le manager de l\'agent ne fait rien. Que faites-vous ?'
+    ],
+    ripostes:[
+      'La liberté d\'expression a des limites légales claires. Les propos racistes sont punis par la loi Pleven. Je le lui dis avec calme et fermeté. Je ne débats pas de philosophie — j\'applique le cadre légal.',
+      'Je respecte son choix. Je lui dis que je suis disponible si besoin et je retourne à ma place. Sa dignité inclut le droit de gérer la situation à sa façon. Mais je reste en retrait, prêt à intervenir si ça escalade.',
+      'Je signale les faits par écrit à la hiérarchie via un email daté avec les témoins présents. Si aucune suite n\'est donnée, la voie de l\'inspection du travail est ouverte.'
+    ]
+  },
+  {
+    id:18, emoji:'🍖', probabilite:80,
+    titre:'La falsification au restaurant',
+    tags:['Éthique','Sécurité'], matrice:'A',
+    enonce:'Tu travailles en job d\'été dans un restaurant. Tu découvres qu\'un collègue modifie les étiquettes de date de péremption de la viande au marqueur.',
+    hypothese:'Pression financière du patron en difficulté. Le collègue agit sous contrainte pour éviter des pertes financières.',
+    correction_p1:'Grand I — Je me projette dans la réserve du restaurant où je travaille. Je découvre les étiquettes modifiées. Je suis sidéré et immédiatement alarmé pour la sécurité sanitaire des clients. Mon sang se glace.\n\nGrand II — J\'émets l\'hypothèse d\'une pression financière intense sur le collègue ou le gérant. La faillite imminente peut pousser à des actes désespérés.\n\nGrand III — La sécurité sanitaire des clients est absolue. Je n\'ai pas le choix.\n\nGrand IV — Je mets à l\'écart les produits altérés immédiatement. J\'en parle directement au gérant. S\'il est impliqué, je contacte la DDPP (Direction Départementale de la Protection des Populations). Je documente tout.\n\nGrand V — « Je me réjouis que cette intervention ait protégé des clients et respecté mon intégrité professionnelle. »',
+    questions_jury:[
+      'Le gérant vous dit de ne pas vous mêler de ça et vous menace de licenciement.',
+      'Votre collègue dit qu\'il le fait sous les ordres du patron et qu\'il a peur pour son emploi.',
+      'Est-ce votre rôle d\'agir ou celui des autorités sanitaires ?'
+    ],
+    ripostes:[
+      'Ma réponse est ferme. Je suis légalement tenu de signaler une fraude sanitaire (art. L1421-2 du CSP). S\'il me licencie pour ça, c\'est une faute grave caractérisée. J\'ai documenté les faits.',
+      'J\'entends sa peur. Mais ni lui ni moi ne pouvons être complices d\'une fraude qui peut tuer quelqu\'un. Je lui propose de signaler ensemble, anonymement si possible, pour le protéger au maximum.',
+      'Les deux. Mon rôle immédiat est de stopper le danger en écartant les produits. Ensuite, les autorités prennent le relais. Je suis le premier maillon de la chaîne — indispensable.'
+    ]
+  },
+  {
+    id:19, emoji:'📋', probabilite:65,
+    titre:'L\'éthique et l\'assurance-vie',
+    tags:['Éthique','Relationnel'], matrice:'C',
+    enonce:'En rendant visite à un grand-oncle malade, tu aperçois un document d\'assurance-vie sur sa table de chevet. Un cousin t\'a dit être le seul héritier et pousser le grand-oncle à modifier ce document.',
+    hypothese:'Conflit d\'intérêts et potentielle manipulation d\'une personne vulnérable par un membre de la famille.',
+    correction_p1:'Grand I — Je me projette dans la chambre de mon grand-oncle malade. Je vois le document d\'assurance. Je suis décontenancé et préoccupé par ce que cela implique. Ma gorge se noue.\n\nGrand II — J\'émets l\'hypothèse d\'un Conflit d\'intérêts et d\'une possible manipulation d\'une personne vulnérable.\n\nGrand III — Si je n\'agis pas, une personne vulnérable peut être exploitée. Si j\'agis trop directement, je crée un conflit familial. Ma décision : agir avec subtilité.\n\nGrand IV — Je reste à ma place — je n\'interviens pas dans ses finances directement. Je m\'assure discrètement qu\'il est libre de décider. Je lui suggère de consulter un notaire indépendant pour valider ses choix sans pression.\n\nGrand V — « Je suis satisfait que cette approche respecte sa dignité tout en protégeant ses intérêts. »',
+    questions_jury:[
+      'Le cousin en question est présent et vous accuse de vous mêler de ce qui ne vous regarde pas.',
+      'Votre grand-oncle semble sous pression mais affirme faire ce qu\'il veut.',
+      'Devez-vous alerter les autres membres de la famille ?'
+    ],
+    ripostes:[
+      'Je lui réponds que je me soucie du bien-être de notre grand-oncle, pas de l\'héritage. Je n\'entre pas dans le conflit et maintiens une position neutre et bienveillante.',
+      'Je respecte son autonomie. S\'il est en pleine capacité de discernement, sa décision lui appartient. Je m\'assure simplement qu\'il a eu accès à des conseils indépendants avant de signer.',
+      'Avec discrétion, et uniquement si j\'ai des raisons sérieuses de penser qu\'il est manipulé contre sa volonté. Je ne crée pas de conflit familial sur des suppositions.'
+    ]
+  },
+  {
+    id:20, emoji:'🎭', probabilite:75,
+    titre:'La dérive sectaire amicale',
+    tags:['Santé','Relationnel'], matrice:'C',
+    enonce:'Ton ami te parle avec un discours monotone et répétitif sur « la vérité du monde ». Il a coupé les ponts avec sa famille et ses anciens amis depuis que ce groupe l\'a invité.',
+    hypothese:'Dépression masquée et isolement social. La secte comble un vide affectif et identitaire profond.',
+    correction_p1:'Grand I — Je me projette chez mon ami un soir de semaine. Son regard vide et son discours monotone m\'alarment et m\'attristent profondément. Ma gorge se noue face à ce changement radical.\n\nGrand II — J\'émets l\'hypothèse d\'une Dépression masquée et d\'un vide affectif que le groupe comble. Face à mon écoute, il avoue se sentir enfin « utile » et « compris ».\n\nGrand III — L\'emprise sectaire peut détruire sa vie sur le long terme. J\'agis avec patience.\n\nGrand IV — Je ne le confronte pas frontalement — l\'attaque crée de la résistance. Je l\'invite au cinéma, je garde le lien vivant. Je contacte la MIVILUDES pour des conseils. Extra-Mile : je remobilise progressivement ses anciens amis pour recréer un cocon social alternatif.\n\nGrand V — « Je me réjouis que mon action patiente ait maintenu le lien et permis à mon ami de ne pas être totalement isolé. »',
+    questions_jury:[
+      'Il vous dit que c\'est vous qui êtes manipulé par le système et que ce groupe lui a sauvé la vie.',
+      'Devez-vous contacter directement le groupe pour les confronter ?',
+      'Sa famille vous demande de l\'aider à le « déradicaliser » rapidement. Que répondez-vous ?'
+    ],
+    ripostes:[
+      'Je ne débats pas de sa « vérité ». Je lui dis simplement que son amitié m\'est précieuse et que je veux qu\'il aille bien. Je reste dans l\'affectif, pas dans le rationnel — c\'est le seul terrain où je peux l\'atteindre.',
+      'Non, absolument pas. Confronter le groupe peut renforcer son sentiment d\'appartenance et l\'inciter à se couper encore davantage de moi. La MIVILUDES conseille explicitement d\'éviter cette approche.',
+      'Je les préviens que la « déradicalisation » rapide n\'existe pas sans risque de rupture totale. Le processus est lent et doit passer par le maintien du lien affectif, pas par la confrontation directe.'
+    ]
+  }
 ];
+
+const CHECKLIST_P1 = [
+  "Reformulation visuelle et sensorielle (lieu, ambiance, détail concret)",
+  "Au moins 2 émotions distinctes nommées avec leurs raisons",
+  "Un symptôme corporel mentionné",
+  "Phrase anti-biais d'attribution utilisée",
+  "Hypothèse narrative crédible émise (1 des 5 Clés)",
+  "Balance bénéfice/risque clairement évaluée (Grand III)",
+  "Intervention au présent de l'indicatif (pas de conditionnel)",
+  "Geste humain concret inclus (café, s'asseoir, main sur épaule...)",
+  "Relais professionnel adapté mentionné",
+  "Détail Extra-Mile mémorable ajouté"
+];
+
+const CHECKLIST_P2 = [
+  "Question du jury reformulée avant de répondre",
+  "Position ferme maintenue sur l'éthique si nécessaire (Disque Rayé)",
+  "Adaptabilité démontrée face au nouvel élément",
+  "Réponse au présent de l'indicatif (pas de conditionnel)",
+  "Réponse concise et assertive (pas de « blabla »)",
+  "Passage de relais évoqué quand la situation dépasse"
+];
+
+const JURY_MSGS = [
+  { text:"Le jury souffle…", icon:"😮‍💨" },
+  { text:"Le jury vous fixe intensément.", icon:"👁️" },
+  { text:"Un juré griffonne quelque chose.", icon:"✍️" },
+  { text:"Silence pesant dans la salle.", icon:"🔕" },
+  { text:"Un juré lève un sourcil.", icon:"🤨" },
+  { text:"Le jury échange un regard.", icon:"👀" },
+  { text:"Votre temps est précieux.", icon:"⏱️" },
+  { text:"Le jury attend la suite…", icon:"⌛" },
+  { text:"Un juré se redresse dans son siège.", icon:"🪑" },
+  { text:"Le jury apprécie la nuance.", icon:"🎯" },
+];
+
+const GRIMOIRE = [
+  {
+    id:"g1", num:"I", icon:"🎬", color:"#1B2A4A",
+    titre:"Reformulation Visuelle & Émotions",
+    duree:"45–60 sec",
+    ancrage:"« À la lecture de cet énoncé, je me projette dans une scène concrète: [décor + contexte personnel]. Face à cette situation, je suis d'emblée [émotion 1] car [raison courte], tout en éprouvant [émotion 2] lié à [raison courte]. Physiquement, je sens [symptôme]. »",
+    items:[
+      { titre:"Lieux mobilisables (Contextes)", texte:"Familial (cuisine, odeur de café) · Amis (verres qui tintent) · Quotidien (retour du sport) · Public (rue illuminée après l'entraînement)." },
+      { titre:"Dictionnaire : Danger / Urgence", texte:"Émotions : Alarmé, terrifié. Symptômes : Mon sang se glace dans mes veines, mes jambes flageolent." },
+      { titre:"Dictionnaire : Injustice / Harcèlement", texte:"Émotions : Indigné, outré, révolté. Symptômes : Ma mâchoire se crispe, je sens mon sang bouillir mais je me régule." },
+      { titre:"Dictionnaire : Détresse / Précarité", texte:"Émotions : Bouleversé, accablé, empli de compassion. Symptômes : Ma gorge se noue, lourdeur sur mes épaules." },
+      { titre:"Dictionnaire : Révélation / Tabou", texte:"Émotions : Décontenancé, sidéré, stupéfait. Symptômes : J'ai le souffle coupé, léger mouvement de recul." }
+    ]
+  },
+  {
+    id:"g2", num:"II", icon:"🔍", color:"#5C7A62",
+    titre:"Compréhension & Hypothèses Narratives",
+    duree:"1 min 30",
+    ancrage:"« Cependant, pour me prémunir du biais fondamental d'attribution, je m'interdis tout jugement hâtif et je reste ouvert à toutes les hypothèses. J'émets l'hypothèse que cette situation dissimule en réalité [Titre de la Clé]. Afin de vérifier cette piste en toute objectivité, j'adopte une posture d'ouverture et je vais entreprendre de recueillir des informations. En instaurant ce climat de confiance, la carapace se fissure et elle s'effondre en m'avouant que... Cet échange s'avère révélateur : effectivement, je découvre que [Détail narratif de la clé]. »",
+    items:[
+      { titre:"Astuces de recueil d'infos", texte:"1. Le Tiers : Prendre à part un témoin pour recouper les faits. 2. Le Contexte : L'isoler de la foule, lui servir un verre d'eau pour libérer la parole." },
+      { titre:"Clé 1 — Handicap Invisible (Sclérose, TDAH, Surdité)", texte:"L'individu ne fait pas un caprice, il est terrifié par la honte de devoir justifier sa douleur ou son incapacité en public." },
+      { titre:"Clé 2 — Urgence Sociale & Précarité", texte:"Rongé par la honte, le parent a perdu son travail. L'individu agit par pur instinct de survie pour ne pas finir à la rue." },
+      { titre:"Clé 3 — Épuisement Extrême / Burn-out", texte:"Écrasé par la pression académique et familiale, il n'a pas dormi depuis 72h et perd totalement pied." },
+      { titre:"Clé 4 — Emprise & Harcèlement", texte:"L'individu est terrorisé, subit des menaces quotidiennes et a peur des représailles s'il parle." },
+      { titre:"Clé 5 — Déficit de Communication / Choc Post-Traumatique", texte:"La colère cache un traumatisme récent (agression tue sous silence) ou un énorme malentendu devenu ressentiment." },
+      { titre:"Clé 6 — Conflit d'intérêts / Pression réussite", texte:"Peur panique de l'échec ou détresse financière imminente altérant le discernement éthique. Prisonnier d'un engrenage." },
+      { titre:"Clé 7 — Conflit de Valeurs / Éthique", texte:"Derrière la radicalité se cache une peur, un traumatisme culturel. Garder la neutralité tout en posant un cadre éthique." }
+    ]
+  },
+  {
+    id:"g3", num:"III", icon:"⚖️", color:"#C9A84C",
+    titre:"Décisions Alternatives — Balance B/R",
+    duree:"1 min",
+    ancrage:"« Maintenant que j'ai mieux compris la situation, plusieurs options s'offrent à moi. Tout d'abord, je peux décider de ne pas agir. Dans le pire des cas, [risque fatal]. Dans le meilleur des cas, le problème finit par se résoudre de lui-même, mais cela me semble très peu probable au vu des circonstances. À l'inverse, il m'est possible d'opter pour l'action. Dans le pire des cas, mon implication est mal perçue : [risque social]. Mais dans le meilleur des cas, je parviens à [objectif de sécurité/soutien]. Au vu de ces éléments, ma décision est sans équivoque : j'agis, car c'est incontestablement la voie la plus lucide et mutuellement bénéfique. »",
+    items:[
+      { titre:"Objectif de cette étape", texte:"Prouver au jury que ton action n'est pas impulsive mais le fruit d'une évaluation claire de la balance bénéfice/risque." }
+    ]
+  },
+  {
+    id:"g4", num:"IV", icon:"🛠️", color:"#1B2A4A",
+    titre:"L'Intervention Narrative Modulable",
+    duree:"1 min 30",
+    ancrage:"« Je déploie mon intervention immédiatement et avec assertivité. Je vais dans un premier temps : [Insérer l'Action Technique de la Matrice choisie]. [...] Ainsi, en alliant action immédiate, relais professionnel et présence humaine, je fais tout mon possible pour aider tout en respectant la personne. »",
+    items:[
+      { titre:"Algorithme d'intervention", texte:"Amorce + Matrice (A, B, C, D ou E) + Brique 1 (Geste) + Brique 2 (Action) + Brique 3 (Relais) + Brique 4 (Extra-Mile) + Phrase de fin." },
+      { titre:"Matrice A — Médical / Urgence / Violence", texte:"Je propose de s'asseoir, verre d'eau. Obtention du consentement. Appel 15, 3919 ou Police. Relais SIMPPS/Psy. Reste jusqu'aux secours." },
+      { titre:"Matrice B — Social / Précarité / Échec", texte:"Je l'emmène dans un café calme pour sa fierté. Tact sans créer de dépendance. Relais AS du CROUS. Dîner chez moi le week-end." },
+      { titre:"Matrice C — Relationnel / Conflit / Éthique", texte:"Pause et humour pour désamorcer. Communication non-violente pour compromis. Restaurant préféré pour réconciliation." },
+      { titre:"Matrice D — Légal / Secret (Ajout exhaustif)", texte:"Soutien inconditionnel + cadre sécurisant. Refus d'action illégale sans jugement. Accompagnement juridique ou CeGIDD." },
+      { titre:"Matrice E — Urgence Sécuritaire / Fuite", texte:"Analyse flash de l'environnement. Préservation absolue de l'intégrité physique. Fuite vers lieu public. Appel 17/18. Dépôt de plainte avec la victime." },
+      { titre:"Posture face à l'Autorité", texte:"Neutralité axiologique. Aucune servilité. Désaccord factuel et non-violent. Recours aux médiations (syndicats, scolarité) et traces écrites." }
+    ]
+  },
+  {
+    id:"g5", num:"V", icon:"✅", color:"#5C7A62",
+    titre:"Conclusions Modulables",
+    duree:"30 sec",
+    ancrage:"« En conclusion, je suis satisfait de voir que la synergie des actions que j'ai pu mettre en œuvre a permis à [Prénom] de [Fin A, B ou C]. Je me réjouis que cette démarche, alliée à mon humanité, ait porté ses fruits. »",
+    items:[
+      { titre:"Fin A — Urgence", texte:"« ...d'être enfin hors de danger et de se sentir soutenue. »" },
+      { titre:"Fin B — Social", texte:"« ...de stabiliser sa situation et de reprendre ses études sereinement. »" },
+      { titre:"Fin C — Relationnel", texte:"« ...de dissiper tout malentendu et de renforcer notre lien. »" }
+    ]
+  },
+  {
+    id:"g6", num:"VI", icon:"🛡️", color:"#A83232",
+    titre:"La Riposte — Maîtriser l'Entretien Jury",
+    duree:"8 points",
+    ancrage:"« Si je comprends bien votre question, vous me demandez ce que je ferais si… » (Phrase Pare-Chocs)",
+    items:[
+      { titre:"Loi 1 : Disque Rayé", texte:"« Ma réponse reste non. C'est illégal. Je l'aide autrement (115, avance financière). »" },
+      { titre:"Loi 2 : Maintien du dialogue", texte:"« Je ne cède pas au chantage, mais je reste à l'écoute de sa souffrance. »" },
+      { titre:"Loi 3 : Adaptabilité", texte:"« Ce nouvel élément change mon analyse, je réajuste mon plan sans me braquer. »" },
+      { titre:"Loi 4 : Urgence Vitale", texte:"« Risque suicidaire imminent = bris du secret médical. J'appelle le 15. »" },
+      { titre:"Loi 5 : Attention à soi", texte:"« Un soignant épuisé est inutile. Je pose des limites et je passe le relais. »" },
+      { titre:"Face à la pression de l'employeur", texte:"« L'éthique et la sécurité du patient priment sur la hiérarchie. Je trace mon désaccord par écrit et j'alerte les autorités compétentes. »" }
+    ]
+  },
+  {
+    id:"g7", num:"✦", icon:"📚", color:"#C9A84C",
+    titre:"Lexique de Prestige & Tics à bannir",
+    duree:"À mémoriser",
+    ancrage:"« Je remplace mes tics de langage pour adopter une posture professionnelle et affirmée. »",
+    items:[
+      { titre:"Mots à BANNIR de ton discours", texte:"D'accord/D'accordo (silence à la place) · Effectivement (Assurément/En réalité) · Cependant (Néanmoins/Toutefois) · J'essaie donc (Je propose/J'agis) · C'est pas bien (Délétère/Illégal) · Du coup (Pause)." },
+      { titre:"Attitude & Action au Présent", texte:"Bannis le conditionnel. Dis « Je propose une consultation » (et non « je pourrais proposer »). Baisse le ton pour une confidence, affirme-le pour une décision." },
+      { titre:"Lexique de précision", texte:"Anamnèse · Libre arbitre / Consentement · Synergie des actions · Dès lors · Par conséquent · Nonobstant · Biais d'ancrage / de surconfiance." },
+      { titre:"Les 3 Piliers (Extra-Mile)", texte:"Pilier Logistique : trier papiers, refaire CV, courses. Pilier Affectif : solliciter parents, repas amis communs. Pilier Physique : courir ensemble, balade forêt." }
+    ]
+  }
+];
+
 
 const MASTERY = {
   0:{ bg:'#F3F4F6', color:'#9CA3AF', label:'Non travaillé' },
@@ -233,6 +723,10 @@ const MASTERY = {
   2:{ bg:'#FEF3C7', color:'#D97706', label:'En progression' },
   3:{ bg:'#D1FAE5', color:'#059669', label:'Maîtrisé' },
 };
+
+/* ═══════════════════════════════════════════════════════
+   HOOKS
+═══════════════════════════════════════════════════════ */
 
 function useLS(key, def) {
   const [v, setV] = useState(() => {
@@ -249,6 +743,10 @@ function useLS(key, def) {
   return [v, set];
 }
 
+/* ═══════════════════════════════════════════════════════
+   CIRCULAR TIMER
+═══════════════════════════════════════════════════════ */
+
 function CircularTimer({ total, remaining, running }) {
   const R = 54, C = 2 * Math.PI * R;
   const pct = remaining / total;
@@ -263,18 +761,30 @@ function CircularTimer({ total, remaining, running }) {
     <div style={{display:'flex',flexDirection:'column',alignItems:'center'}}>
       <svg width="140" height="140" viewBox="0 0 140 140">
         <circle cx="70" cy="70" r={R} fill="none" stroke="#F0EDE7" strokeWidth="9"/>
-        <circle cx="70" cy="70" r={R} fill="none" stroke={strokeColor} strokeWidth="9"
-          strokeLinecap="round" strokeDasharray={C} strokeDashoffset={offset} className="timer-ring"/>
-        <text x="70" y="64" textAnchor="middle" fontSize="28" fontWeight="600" fill={strokeColor} fontFamily="DM Sans, sans-serif">
+        <circle
+          cx="70" cy="70" r={R}
+          fill="none" stroke={strokeColor} strokeWidth="9"
+          strokeLinecap="round"
+          strokeDasharray={C}
+          strokeDashoffset={offset}
+          className="timer-ring"
+        />
+        <text x="70" y="64" textAnchor="middle" fontSize="28" fontWeight="600"
+          fill={strokeColor} fontFamily="DM Sans, sans-serif">
           {String(m).padStart(2,'0')}:{String(s).padStart(2,'0')}
         </text>
-        <text x="70" y="82" textAnchor="middle" fontSize="10" fill="#9CA3AF" fontFamily="DM Sans, sans-serif" className={low ? 'anim-pulse' : ''}>
+        <text x="70" y="82" textAnchor="middle" fontSize="10" fill="#9CA3AF" fontFamily="DM Sans, sans-serif"
+          className={low ? 'anim-pulse' : ''}>
           {running ? (low ? 'TERMINEZ !' : 'EN COURS') : 'EN PAUSE'}
         </text>
       </svg>
     </div>
   );
 }
+
+/* ═══════════════════════════════════════════════════════
+   SCORE GAUGE
+═══════════════════════════════════════════════════════ */
 
 function Gauge({ score, label, color='#1B2A4A' }) {
   const R = 36, C = 2 * Math.PI * R;
@@ -286,23 +796,53 @@ function Gauge({ score, label, color='#1B2A4A' }) {
         <circle cx="45" cy="45" r={R} fill="none" stroke={color} strokeWidth="7"
           strokeLinecap="round" strokeDasharray={C} strokeDashoffset={offset}
           style={{transform:'rotate(-90deg)',transformOrigin:'45px 45px',transition:'stroke-dashoffset 1.2s ease'}}/>
-        <text x="45" y="50" textAnchor="middle" fontSize="18" fontWeight="600" fill={color} fontFamily="DM Sans, sans-serif">{score}%</text>
+        <text x="45" y="50" textAnchor="middle" fontSize="18" fontWeight="600"
+          fill={color} fontFamily="DM Sans, sans-serif">{score}%</text>
       </svg>
       <span style={{fontSize:11,color:'#6B7280',fontWeight:500,textAlign:'center',maxWidth:72}}>{label}</span>
     </div>
   );
 }
 
-function Dashboard({ sessions }) {
+/* ═══════════════════════════════════════════════════════
+   DASHBOARD
+═══════════════════════════════════════════════════════ */
+
+function Dashboard({ sessions, mastery }) {
   const n = sessions.length;
   const avg = n ? Math.round(sessions.reduce((a,s)=>a+s.score,0)/n) : 0;
+  const masterCount = Object.values(mastery).filter(v=>v===3).length;
+  const recent = [...sessions].reverse().slice(0,6);
+
+  const tagMap = {};
+  sessions.forEach(s => {
+    const sc = SCENARIOS.find(x=>x.id===s.scenarioId);
+    if (!sc) return;
+    sc.tags.forEach(t => {
+      tagMap[t] = tagMap[t] || {sum:0,n:0};
+      tagMap[t].sum += s.score;
+      tagMap[t].n++;
+    });
+  });
+  const cats = [
+    {label:'Urgence',   color:'#A83232'},
+    {label:'Social',    color:'#5C7A62'},
+    {label:'Relationnel',color:'#1B2A4A'},
+    {label:'Éthique',   color:'#C9A84C'},
+    {label:'Santé',     color:'#7C3AED'},
+    {label:'Sécurité',  color:'#0891B2'},
+  ].map(c => ({...c, score: tagMap[c.label] ? Math.round(tagMap[c.label].sum/tagMap[c.label].n) : 0}))
+   .filter(c=>c.score>0);
+
   return (
     <div style={{display:'flex',flexDirection:'column',gap:16}} className="anim-up">
+
+      {/* Stats row */}
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:12}}>
         {[
           {val:n, label:'Simulations', color:'#1B2A4A'},
           {val:avg+'%', label:'Score moyen', color:'#5C7A62'},
-          {val:'Bienvenue', label:'OralMed 2026', color:'#C9A84C'},
+          {val:masterCount, label:'Maîtrisés', color:'#C9A84C'},
         ].map((s,i)=>(
           <div key={i} className="card" style={{padding:'16px 12px',textAlign:'center'}}>
             <div style={{fontSize:30,fontWeight:700,fontFamily:'Playfair Display, serif',color:s.color,lineHeight:1.1}}>{s.val}</div>
@@ -310,66 +850,612 @@ function Dashboard({ sessions }) {
           </div>
         ))}
       </div>
-      <div className="card" style={{padding:'20px 16px',textAlign:'center'}}>
-        <div style={{fontFamily:'Playfair Display, serif',fontWeight:700,fontSize:18,color:'#1B2A4A',marginBottom:16}}>🎯 Académie des Oraux</div>
-        <p style={{fontSize:14,color:'#6B7280',lineHeight:1.6}}>Préparez vos scénarios éthiques et cliniques pour les examens oraux médicaux. Entraînez-vous à gérer 20 situations complexes.</p>
-      </div>
-    </div>
-  );
-}
 
-function Repertoire() {
-  const [mastery, setMastery] = useLS('mastery', {});
-  return (
-    <div style={{display:'flex',flexDirection:'column',gap:12}} className="anim-up">
-      <div className="card" style={{padding:'16px'}}>
-        <div style={{fontFamily:'Playfair Display, serif',fontWeight:700,fontSize:18,color:'#1B2A4A',marginBottom:12}}>Répertoire des Scénarios</div>
+      {/* Category gauges */}
+      <div className="card" style={{padding:'20px 16px'}}>
+        <div style={{fontFamily:'Playfair Display, serif',fontWeight:700,fontSize:16,color:'#1B2A4A',marginBottom:16}}>
+          Compétences par catégorie
+        </div>
+        {cats.length === 0 ? (
+          <div style={{textAlign:'center',padding:'24px 0',color:'#9CA3AF'}}>
+            <div style={{fontSize:36,marginBottom:8}}>🎯</div>
+            <div style={{fontSize:13}}>Lance ta première simulation dans L'Arène pour voir tes stats ici.</div>
+          </div>
+        ) : (
+          <div style={{display:'flex',flexWrap:'wrap',gap:16,justifyContent:'center'}}>
+            {cats.map(c=><Gauge key={c.label} score={c.score} label={c.label} color={c.color}/>)}
+          </div>
+        )}
+      </div>
+
+      {/* Scenario mastery grid */}
+      <div className="card" style={{padding:'20px 16px'}}>
+        <div style={{fontFamily:'Playfair Display, serif',fontWeight:700,fontSize:16,color:'#1B2A4A',marginBottom:12}}>
+          Carte de progression
+        </div>
+        <div style={{display:'flex',gap:12,flexWrap:'wrap',marginBottom:12}}>
+          {Object.entries(MASTERY).map(([lvl,{color,label}])=>(
+            <div key={lvl} style={{display:'flex',alignItems:'center',gap:6}}>
+              <div style={{width:10,height:10,borderRadius:'50%',background:color}}/>
+              <span style={{fontSize:11,color:'#6B7280'}}>{label}</span>
+            </div>
+          ))}
+        </div>
         <div style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:8}}>
           {SCENARIOS.map(sc=>{
             const m = mastery[sc.id]||0;
             const {bg,color} = MASTERY[m];
             return (
-              <div key={sc.id} style={{background:bg,borderRadius:10,padding:'12px 4px',textAlign:'center',cursor:'pointer'}}>
-                <div style={{fontSize:24}}>{sc.emoji}</div>
-                <div style={{fontSize:10,fontWeight:700,color,marginTop:4}}>{sc.id}</div>
-                <div style={{fontSize:8,color:'#9CA3AF',marginTop:2}}>{MASTERY[m].label}</div>
+              <div key={sc.id} style={{background:bg,borderRadius:10,padding:'8px 4px',textAlign:'center'}}>
+                <div style={{fontSize:20}}>{sc.emoji}</div>
+                <div style={{fontSize:10,fontWeight:700,color,marginTop:2}}>{sc.id}</div>
               </div>
             );
           })}
+        </div>
+      </div>
+
+      {/* Recent sessions */}
+      {recent.length > 0 && (
+        <div className="card" style={{padding:'20px 16px'}}>
+          <div style={{fontFamily:'Playfair Display, serif',fontWeight:700,fontSize:16,color:'#1B2A4A',marginBottom:12}}>
+            Dernières simulations
+          </div>
+          <div>
+            {recent.map((s,i)=>{
+              const sc = SCENARIOS.find(x=>x.id===s.scenarioId);
+              const sColor = s.score>=70?'#059669':s.score>=40?'#D97706':'#EF4444';
+              return (
+                <div key={i} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 0',borderBottom:i<recent.length-1?'1px solid #F3F4F6':'none'}}>
+                  <div style={{display:'flex',alignItems:'center',gap:10}}>
+                    <span style={{fontSize:22}}>{sc?.emoji||'📋'}</span>
+                    <div>
+                      <div style={{fontSize:13,fontWeight:500,color:'#1B2A4A'}}>{sc?.titre||'Scénario'}</div>
+                      <div style={{fontSize:11,color:'#9CA3AF'}}>{new Date(s.date).toLocaleDateString('fr-FR')}</div>
+                    </div>
+                  </div>
+                  <div style={{fontSize:16,fontWeight:700,color:sColor}}>{s.score}%</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
+   GRIMOIRE
+═══════════════════════════════════════════════════════ */
+
+function GrimoireSection({ sec, open, onToggle }) {
+  return (
+    <div className="card" style={{overflow:'hidden',border:`1px solid ${sec.color}22`}}>
+      <button onClick={onToggle} style={{width:'100%',padding:'16px',display:'flex',alignItems:'center',justifyContent:'space-between',background:'none',border:'none',cursor:'pointer',textAlign:'left'}}>
+        <div style={{display:'flex',alignItems:'center',gap:12}}>
+          <span style={{fontSize:24}}>{sec.icon}</span>
+          <div>
+            <div style={{fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.08em',color:sec.color,marginBottom:2}}>
+              Grand {sec.num} · {sec.duree}
+            </div>
+            <div style={{fontFamily:'Playfair Display, serif',fontWeight:700,fontSize:15,color:'#1B2A4A'}}>{sec.titre}</div>
+          </div>
+        </div>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2.5"
+          style={{flexShrink:0,transform:open?'rotate(180deg)':'rotate(0deg)',transition:'transform .3s ease'}}>
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </button>
+
+      <div className={`acc-body ${open?'open':''}`}>
+        <div className="acc-inner">
+          <div style={{padding:'0 16px 20px',display:'flex',flexDirection:'column',gap:14}}>
+            {sec.ancrage && (
+              <div className="hl" style={{borderRadius:10,padding:'12px 14px'}}>
+                <div style={{fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.08em',color:'#92400E',marginBottom:6}}>⭐ Phrase d'ancrage à mémoriser</div>
+                <p style={{fontSize:13,color:'#1B2A4A',fontWeight:500,lineHeight:1.6,fontStyle:'italic'}}>{sec.ancrage}</p>
+              </div>
+            )}
+            {sec.items.map((item,i)=>(
+              <div key={i}>
+                <div style={{fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.07em',color:sec.color,marginBottom:5}}>
+                  {item.titre}
+                </div>
+                <p style={{fontSize:13,color:'#4B5563',lineHeight:1.65}}>{item.texte}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-function App() {
-  const [sessions, setSessions] = useLS('sessions', []);
-  const [currentTab, setCurrentTab] = useState('dashboard');
+function Grimoire() {
+  const [open, setOpen] = useState({g1:true});
+  const toggle = id => setOpen(p=>({...p,[id]:!p[id]}));
 
   return (
-    <div style={{maxWidth:'1200px',margin:'0 auto',padding:'20px'}}>
-      <div style={{display:'flex',gap:24,marginBottom:32}}>
-        <button onClick={()=>setCurrentTab('dashboard')} className={`nav-btn ${currentTab==='dashboard'?'active':''}`}
-          style={{background:'none',border:'none',cursor:'pointer',fontSize:14,fontWeight:600,color:'#1B2A4A'}}>
-          Tableau de bord
-        </button>
-        <button onClick={()=>setCurrentTab('repertoire')} className={`nav-btn ${currentTab==='repertoire'?'active':''}`}
-          style={{background:'none',border:'none',cursor:'pointer',fontSize:14,fontWeight:600,color:'#1B2A4A'}}>
-          Répertoire
-        </button>
+    <div style={{display:'flex',flexDirection:'column',gap:12}} className="anim-up">
+      <div className="card" style={{padding:'16px',background:'linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)',border:'1px solid #C9A84C33'}}>
+        <div style={{fontFamily:'Playfair Display, serif',fontWeight:700,fontSize:18,color:'#1B2A4A',marginBottom:4}}>Le Grimoire Méthodologique</div>
+        <p style={{fontSize:13,color:'#6B7280'}}>Toute la méthodologie en 7 Grands. Appuie sur chaque section pour la développer.</p>
+      </div>
+      {GRIMOIRE.map(s=>(
+        <GrimoireSection key={s.id} sec={s} open={!!open[s.id]} onToggle={()=>toggle(s.id)}/>
+      ))}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
+   REPERTOIRE
+═══════════════════════════════════════════════════════ */
+
+function Repertoire({ mastery, setMastery }) {
+  const [filter, setFilter] = useState('Tous');
+  const [search, setSearch] = useState('');
+  const tags = ['Tous','Urgence','Social','Relationnel','Éthique','Santé','Sécurité','Familial','Médical','Précarité'];
+
+  const filtered = SCENARIOS.filter(sc=>{
+    const okTag = filter==='Tous' || sc.tags.includes(filter);
+    const okQ   = !search || sc.titre.toLowerCase().includes(search.toLowerCase());
+    return okTag && okQ;
+  });
+
+  return (
+    <div style={{display:'flex',flexDirection:'column',gap:12}} className="anim-up">
+      {/* Search */}
+      <div className="card" style={{padding:12}}>
+        <input
+          type="text" placeholder="🔍  Rechercher un scénario..."
+          value={search} onChange={e=>setSearch(e.target.value)}
+          style={{width:'100%',fontSize:14,padding:'10px 14px',borderRadius:10,border:'1px solid #E5E7EB',background:'#F9FAFB',fontFamily:'DM Sans, sans-serif',color:'#1B2A4A',outline:'none'}}
+        />
       </div>
 
-      {currentTab === 'dashboard' && <Dashboard sessions={sessions} />}
-      {currentTab === 'repertoire' && <Repertoire />}
+      {/* Filter tags */}
+      <div style={{display:'flex',gap:8,overflowX:'auto',paddingBottom:4,WebkitOverflowScrolling:'touch'}}
+           className="hide-scrollbar">
+        {tags.map(t=>(
+          <button key={t} onClick={()=>setFilter(t)}
+            style={{padding:'6px 14px',borderRadius:20,fontSize:12,fontWeight:600,whiteSpace:'nowrap',border:'none',cursor:'pointer',fontFamily:'DM Sans, sans-serif',
+              background:filter===t?'#1B2A4A':'#fff',
+              color:filter===t?'#fff':'#6B7280',
+              boxShadow:filter===t?'0 2px 8px #1B2A4A33':'0 1px 3px rgba(0,0,0,.08)'}}>
+            {t}
+          </button>
+        ))}
+      </div>
 
-      <div style={{marginTop:40,textAlign:'center',color:'#9CA3AF',fontSize:12}}>
-        <p>OralMed 2026 — Académie des Oraux — Préparation aux examens cliniques</p>
+      {/* Scenario cards */}
+      {filtered.map(sc=>{
+        const m = mastery[sc.id]||0;
+        const {bg,color,label} = MASTERY[m];
+        return (
+          <div key={sc.id} className="card card-hover" style={{padding:'14px 16px',display:'flex',alignItems:'center',gap:12}}>
+            <span style={{fontSize:28,flexShrink:0}}>{sc.emoji}</span>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:13,fontWeight:600,color:'#1B2A4A',marginBottom:4,lineHeight:1.3}}>{sc.titre}</div>
+              <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
+                {sc.tags.map(t=><span key={t} className={`tag ${t}`}>{t}</span>)}
+                <span style={{fontSize:10,color:'#9CA3AF'}}>· Mat.{sc.matrice}</span>
+              </div>
+            </div>
+            <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:6,flexShrink:0}}>
+              <span style={{fontSize:12,fontWeight:700,color:'#C9A84C'}}>{sc.probabilite}%</span>
+              <select value={m} onChange={e=>setMastery(sc.id,+e.target.value)}
+                className="mastery-select"
+                style={{background:bg,color}}>
+                {Object.entries(MASTERY).map(([l,{label:lb}])=>(
+                  <option key={l} value={l}>{lb}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        );
+      })}
+
+      {filtered.length===0 && (
+        <div className="card" style={{padding:'40px 20px',textAlign:'center',color:'#9CA3AF'}}>
+          <div style={{fontSize:32,marginBottom:8}}>🔍</div>
+          <div style={{fontSize:13}}>Aucun scénario trouvé.</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
+   CHECKLIST
+═══════════════════════════════════════════════════════ */
+
+function Checklist({ items, checked, onChange }) {
+  return (
+    <div>
+      {items.map((item,i)=>(
+        <div key={i} className={`check-row ${checked[i]?'checked':''}`} onClick={()=>{
+          const n=[...checked]; n[i]=!n[i]; onChange(n);
+        }}>
+          <div className={`check-box ${checked[i]?'on':''}`}>
+            {checked[i]&&<svg width="11" height="11" viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+          </div>
+          <span className="check-label" style={{fontSize:13,color:'#374151',lineHeight:1.45}}>{item}</span>
+        </div>
+      ))}
+      <div style={{marginTop:10,textAlign:'right',fontSize:12,fontWeight:600,color:'#5C7A62'}}>
+        {checked.filter(Boolean).length}/{items.length} critères validés
       </div>
     </div>
   );
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+/* ═══════════════════════════════════════════════════════
+   ARENE
+═══════════════════════════════════════════════════════ */
+
+const TIMER_SEC = 5 * 60;
+
+function Arene({ onDone }) {
+  const [phase, setPhase] = useState('idle');
+  const [sc, setSc] = useState(null);
+  const [jury, setJury] = useState(false);
+  const [running, setRunning] = useState(false);
+  const [rem, setRem] = useState(TIMER_SEC);
+  const [done, setDone] = useState(false);
+  const [toast, setToast] = useState(null);
+  const [chk1, setChk1] = useState(Array(CHECKLIST_P1.length).fill(false));
+  const [chk2, setChk2] = useState(Array(CHECKLIST_P2.length).fill(false));
+  const [activeQ, setActiveQ] = useState(0);
+
+  const timerRef = useRef(null);
+  const juryRef  = useRef(null);
+
+  // Timer
+  useEffect(()=>{
+    if (running && rem > 0) {
+      timerRef.current = setInterval(()=>{
+        setRem(p=>{
+          if(p<=1){ clearInterval(timerRef.current); setRunning(false); setDone(true); return 0; }
+          return p-1;
+        });
+      },1000);
+    }
+    return ()=>clearInterval(timerRef.current);
+  },[running]);
+
+  // Jury sadique
+  useEffect(()=>{
+    if (!jury||!running) { clearTimeout(juryRef.current); return; }
+    const scheduleNext = () => {
+      juryRef.current = setTimeout(()=>{
+        const msg = JURY_MSGS[Math.floor(Math.random()*JURY_MSGS.length)];
+        setToast(msg);
+        setTimeout(()=>setToast(null),3200);
+        scheduleNext();
+      }, 18000+Math.random()*35000);
+    };
+    scheduleNext();
+    return ()=>clearTimeout(juryRef.current);
+  },[jury,running]);
+
+  const startSession = () => {
+    const scenario = SCENARIOS[Math.floor(Math.random()*SCENARIOS.length)];
+    setSc(scenario);
+    setPhase('p1');
+    setRem(TIMER_SEC); setDone(false);
+    setRunning(true);
+    setChk1(Array(CHECKLIST_P1.length).fill(false));
+    setChk2(Array(CHECKLIST_P2.length).fill(false));
+    setActiveQ(0);
+    setToast(null);
+  };
+
+  const toCorr1 = () => {
+    clearInterval(timerRef.current); clearTimeout(juryRef.current);
+    setRunning(false); setToast(null); setPhase('correction1');
+  };
+
+  const toP2 = () => {
+    setPhase('p2'); setRem(TIMER_SEC); setDone(false);
+    setRunning(true); setActiveQ(0);
+  };
+
+  const toCorr2 = () => {
+    clearInterval(timerRef.current); clearTimeout(juryRef.current);
+    setRunning(false); setPhase('correction2');
+  };
+
+  const finish = () => {
+    const c1 = chk1.filter(Boolean).length;
+    const c2 = chk2.filter(Boolean).length;
+    const score = Math.round((c1+c2)/(CHECKLIST_P1.length+CHECKLIST_P2.length)*100);
+    setPhase('result');
+    onDone({ scenarioId:sc.id, score, c1, c2, date:new Date().toISOString() });
+  };
+
+  const reset = () => {
+    clearInterval(timerRef.current); clearTimeout(juryRef.current);
+    setPhase('idle'); setSc(null); setRunning(false); setDone(false);
+  };
+
+  // ── IDLE ──
+  if (phase==='idle') return (
+    <div style={{display:'flex',flexDirection:'column',gap:16}} className="anim-up">
+      <div className="card" style={{padding:'20px 16px'}}>
+        <div style={{fontFamily:'Playfair Display, serif',fontWeight:700,fontSize:20,color:'#1B2A4A',marginBottom:6}}>L'Arène de Simulation</div>
+        <p style={{fontSize:13,color:'#6B7280',lineHeight:1.6,marginBottom:20}}>Lance une simulation complète. Tu auras 5 minutes par partie pour t'exprimer à voix haute.</p>
+
+        <div style={{background:'#FAEDB5',borderRadius:14,padding:'14px',display:'flex',alignItems:'center',gap:12,marginBottom:20}}>
+          <span style={{fontSize:24}}>⚔️</span>
+          <div style={{flex:1}}>
+            <div style={{fontSize:13,fontWeight:600,color:'#1B2A4A'}}>Mode Jury Sadique</div>
+            <div style={{fontSize:11,color:'#92400E',marginTop:2}}>Pop-ups psychologiques pendant le chrono</div>
+          </div>
+          <div className={`toggle-track ${jury?'on':''}`} onClick={()=>setJury(!jury)}>
+            <div className="toggle-thumb"/>
+          </div>
+        </div>
+
+        <button className="btn btn-navy" onClick={startSession}>🎯  Lancer un sujet aléatoire</button>
+      </div>
+
+      <div className="card" style={{padding:'16px',background:'#F8F6F1',border:'1px solid #E5E0D4'}}>
+        <div style={{fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.08em',color:'#9CA3AF',marginBottom:8}}>Rappel du déroulé</div>
+        {[
+          {emoji:'🎤',text:'Partie 1 — Monologue (5 min chrono)'},
+          {emoji:'✅',text:'Auto-évaluation & Correction P1'},
+          {emoji:'🎭',text:'Partie 2 — Questions jury (5 min chrono)'},
+          {emoji:'🏁',text:'Auto-évaluation, Ripostes & Score final'},
+        ].map((s,i)=>(
+          <div key={i} style={{display:'flex',alignItems:'center',gap:10,padding:'6px 0',borderBottom:i<3?'1px solid #EDE8DE':'none'}}>
+            <span>{s.emoji}</span>
+            <span style={{fontSize:12,color:'#4B5563'}}>{s.text}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  // ── PARTIE 1 ──
+  if (phase==='p1') return (
+    <div style={{display:'flex',flexDirection:'column',gap:14}} className="anim-up">
+      {toast && (
+        <div className="jury-toast">
+          <div style={{background:'white',border:'1px solid #FECACA',borderRadius:20,padding:'10px 18px',boxShadow:'0 8px 24px rgba(0,0,0,.12)',display:'flex',alignItems:'center',gap:8}}>
+            <span style={{fontSize:20}}>{toast.icon}</span>
+            <span style={{fontSize:13,fontWeight:600,color:'#B91C1C'}}>{toast.text}</span>
+          </div>
+        </div>
+      )}
+
+      <div className="card" style={{padding:'14px 16px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+        <div>
+          <div style={{fontSize:10,color:'#9CA3AF',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.07em'}}>Partie 1 · Monologue</div>
+          <div style={{fontFamily:'Playfair Display, serif',fontWeight:700,fontSize:15,color:'#1B2A4A',marginTop:2}}>{sc.titre}</div>
+        </div>
+        <span style={{fontSize:30}}>{sc.emoji}</span>
+      </div>
+
+      <div className="card" style={{padding:'20px',display:'flex',justifyContent:'center'}}>
+        <CircularTimer total={TIMER_SEC} remaining={rem} running={running}/>
+      </div>
+
+      <div className="card" style={{padding:'16px'}}>
+        <div style={{fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.07em',color:'#9CA3AF',marginBottom:8}}>📋 Énoncé</div>
+        <p style={{fontSize:13,color:'#1B2A4A',lineHeight:1.65}}>{sc.enonce}</p>
+      </div>
+
+      {done && (
+        <div style={{background:'#FEF2F2',border:'1px solid #FECACA',borderRadius:14,padding:'12px 16px',textAlign:'center'}}>
+          <span style={{fontSize:13,fontWeight:600,color:'#B91C1C'}}>⏰ Temps écoulé ! Passe à la correction.</span>
+        </div>
+      )}
+
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+        <button className="btn btn-ghost" onClick={()=>setRunning(!running)}
+          style={{color:running?'#A83232':'#5C7A62'}}>
+          {running ? '⏸  Pause' : '▶️  Reprendre'}
+        </button>
+        <button className="btn btn-sage" onClick={toCorr1}>✅  Voir Correction</button>
+      </div>
+    </div>
+  );
+
+  // ── CORRECTION 1 ──
+  if (phase==='correction1') return (
+    <div style={{display:'flex',flexDirection:'column',gap:14}} className="anim-side">
+      <div className="card" style={{padding:'14px 16px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+        <div>
+          <div style={{fontSize:10,color:'#9CA3AF',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.07em'}}>Correction · Partie 1</div>
+          <div style={{fontFamily:'Playfair Display, serif',fontWeight:700,fontSize:15,color:'#1B2A4A',marginTop:2}}>{sc.titre}</div>
+        </div>
+        <span style={{fontSize:30}}>{sc.emoji}</span>
+      </div>
+
+      <div className="card" style={{padding:'16px'}}>
+        <div style={{fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.07em',color:'#1B2A4A',marginBottom:8}}>💡 Hypothèse idéale</div>
+        <div className="hl" style={{borderRadius:10,padding:'12px'}}>
+          <p style={{fontSize:13,color:'#1B2A4A',fontWeight:500,lineHeight:1.6}}>{sc.hypothese}</p>
+        </div>
+      </div>
+
+      <div className="card" style={{padding:'16px'}}>
+        <div style={{fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.07em',color:'#1B2A4A',marginBottom:10}}>📖 Correction complète</div>
+        <p style={{fontSize:13,color:'#4B5563',lineHeight:1.7,whiteSpace:'pre-line'}}>{sc.correction_p1}</p>
+      </div>
+
+      <div className="card" style={{padding:'16px'}}>
+        <div style={{fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.07em',color:'#1B2A4A',marginBottom:10}}>✅ Auto-évaluation Partie 1</div>
+        <Checklist items={CHECKLIST_P1} checked={chk1} onChange={setChk1}/>
+      </div>
+
+      <button className="btn btn-navy" onClick={toP2}>➡️  Passer à la Partie 2 — Questions Jury</button>
+    </div>
+  );
+
+  // ── PARTIE 2 ──
+  if (phase==='p2') return (
+    <div style={{display:'flex',flexDirection:'column',gap:14}} className="anim-up">
+      <div className="card" style={{padding:'14px 16px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+        <div>
+          <div style={{fontSize:10,color:'#9CA3AF',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.07em'}}>Partie 2 · Questions Jury</div>
+          <div style={{fontFamily:'Playfair Display, serif',fontWeight:700,fontSize:15,color:'#1B2A4A',marginTop:2}}>{sc.titre}</div>
+        </div>
+        <span style={{fontSize:30}}>{sc.emoji}</span>
+      </div>
+
+      <div className="card" style={{padding:'20px',display:'flex',justifyContent:'center'}}>
+        <CircularTimer total={TIMER_SEC} remaining={rem} running={running}/>
+      </div>
+
+      <div className="card" style={{padding:'16px'}}>
+        <div style={{fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.07em',color:'#9CA3AF',marginBottom:12}}>🎤 Questions du Jury — réponds à voix haute</div>
+        {sc.questions_jury.map((q,i)=>(
+          <div key={i} onClick={()=>setActiveQ(i)}
+            style={{padding:'12px 14px',borderRadius:12,marginBottom:8,cursor:'pointer',transition:'all .2s',
+              borderLeft:`4px solid ${i===activeQ?'#1B2A4A':'#E5E7EB'}`,
+              background:i===activeQ?'#EFF2F7':'#F9FAFB'}}>
+            <div style={{fontSize:10,fontWeight:700,color:'#9CA3AF',marginBottom:4}}>Question {i+1}</div>
+            <p style={{fontSize:13,color:'#1B2A4A',fontWeight:500,lineHeight:1.45}}>{q}</p>
+          </div>
+        ))}
+      </div>
+
+      {done && (
+        <div style={{background:'#FEF2F2',border:'1px solid #FECACA',borderRadius:14,padding:'12px 16px',textAlign:'center'}}>
+          <span style={{fontSize:13,fontWeight:600,color:'#B91C1C'}}>⏰ Temps écoulé ! Passe à la correction.</span>
+        </div>
+      )}
+
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+        <button className="btn btn-ghost" onClick={()=>setRunning(!running)}
+          style={{color:running?'#A83232':'#5C7A62'}}>
+          {running ? '⏸  Pause' : '▶️  Reprendre'}
+        </button>
+        <button className="btn btn-sage" onClick={toCorr2}>✅  Voir Correction P.2</button>
+      </div>
+    </div>
+  );
+
+    // ── CORRECTION 2 ──
+  if (phase==='correction2') return (
+    <div style={{display:'flex',flexDirection:'column',gap:14}} className="anim-side">
+      <div className="card" style={{padding:'14px 16px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+        <div>
+          <div style={{fontSize:10,color:'#9CA3AF',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.07em'}}>Correction · Partie 2</div>
+          <div style={{fontFamily:'Playfair Display, serif',fontWeight:700,fontSize:15,color:'#1B2A4A',marginTop:2}}>{sc.titre}</div>
+        </div>
+        <span style={{fontSize:30}}>{sc.emoji}</span>
+      </div>
+
+      <div className="card" style={{padding:'16px'}}>
+        <div style={{fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.07em',color:'#1B2A4A',marginBottom:12}}>📖 Ripostes attendues</div>
+        {sc.ripostes.map((r,i)=>(
+          <div key={i} style={{marginBottom:12}}>
+            <div style={{fontSize:11,fontWeight:700,color:'#5C7A62',marginBottom:4}}>Pour la question {i+1} :</div>
+            <p style={{fontSize:13,color:'#4B5563',lineHeight:1.6}}>{r}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="card" style={{padding:'16px'}}>
+        <div style={{fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.07em',color:'#1B2A4A',marginBottom:10}}>✅ Auto-évaluation Partie 2</div>
+        <Checklist items={CHECKLIST_P2} checked={chk2} onChange={setChk2}/>
+      </div>
+
+      <button className="btn btn-navy" onClick={finish}>🏁  Terminer et enregistrer le score</button>
+    </div>
+  );
+
+  // ── RESULT ──
+  if (phase==='result') return (
+    <div style={{display:'flex',flexDirection:'column',gap:16}} className="anim-pop">
+      <div className="card" style={{padding:'30px 20px',textAlign:'center'}}>
+        <div style={{fontSize:40,marginBottom:10}}>🎉</div>
+        <div style={{fontFamily:'Playfair Display, serif',fontWeight:700,fontSize:22,color:'#1B2A4A',marginBottom:4}}>Simulation terminée</div>
+        <p style={{fontSize:13,color:'#6B7280',marginBottom:20}}>Voici ton score d'auto-évaluation pour ce scénario.</p>
+        
+        <div style={{display:'flex',justifyContent:'center'}}>
+          <Gauge score={Math.round((chk1.filter(Boolean).length + chk2.filter(Boolean).length) / (CHECKLIST_P1.length + CHECKLIST_P2.length) * 100)} label="Score final" color="#5C7A62" />
+        </div>
+      </div>
+
+      <button className="btn btn-navy" onClick={reset}>🏠  Retour à l'Arène</button>
+    </div>
+  );
+
+  return null;
+}
+
+/* ═══════════════════════════════════════════════════════
+   MAIN APP
+═══════════════════════════════════════════════════════ */
+
+function App() {
+  const [tab, setTab] = useState('dashboard');
+  const [sessions, setSessions] = useState(() => {
+    try { const s = localStorage.getItem('oral_sessions'); return s ? JSON.parse(s) : []; }
+    catch { return []; }
+  });
+  const [mastery, setMastery] = useState(() => {
+    try { const s = localStorage.getItem('oral_mastery'); return s ? JSON.parse(s) : {}; }
+    catch { return {}; }
+  });
+
+  const handleDone = (result) => {
+    const newSessions = [...sessions, result];
+    setSessions(newSessions);
+    localStorage.setItem('oral_sessions', JSON.stringify(newSessions));
+  };
+
+  const updateMastery = (id, lvl) => {
+    const newMastery = {...mastery, [id]: lvl};
+    setMastery(newMastery);
+    localStorage.setItem('oral_mastery', JSON.stringify(newMastery));
+  };
+
+  return (
+    <div style={{maxWidth:600,margin:'0 auto',paddingBottom:80}}>
+      {/* Header */}
+      <header style={{padding:'20px 16px',display:'flex',alignItems:'center',gap:12,background:'#fff',boxShadow:'0 1px 2px rgba(0,0,0,.04)',position:'sticky',top:0,zIndex:100}}>
+        <div style={{width:36,height:36,borderRadius:10,background:'#1B2A4A',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20}}>⚕️</div>
+        <div>
+          <h1 style={{fontFamily:'Playfair Display, serif',fontWeight:700,fontSize:18,color:'#1B2A4A'}}>OralMed 2026</h1>
+          <div style={{fontSize:11,color:'#9CA3AF',fontWeight:500,letterSpacing:'0.04em'}}>ACADÉMIE DES ORAUX</div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main style={{padding:'16px'}}>
+        {tab==='dashboard' && <Dashboard sessions={sessions} mastery={mastery}/>}
+        {tab==='grimoire'  && <Grimoire/>}
+        {tab==='repertoire'&& <Repertoire mastery={mastery} setMastery={updateMastery}/>}
+        {tab==='arene'     && <Arene onDone={handleDone}/>}
+      </main>
+
+      {/* Bottom Nav */}
+      <nav style={{position:'fixed',bottom:0,left:0,right:0,background:'#fff',boxShadow:'0 -2px 10px rgba(27,42,74,.05)',display:'flex',justifyContent:'space-around',padding:'10px 16px 24px',zIndex:100}}>
+        {[
+          {id:'dashboard', icon:'📊', label:'Accueil'},
+          {id:'grimoire',  icon:'📚', label:'Grimoire'},
+          {id:'repertoire',icon:'📂', label:'Sujets'},
+          {id:'arene',     icon:'⚔️', label:'Arène'},
+        ].map(t=>(
+          <button key={t.id} onClick={()=>setTab(t.id)} className={`nav-btn ${tab===t.id?'active':''}`}
+            style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4,background:'none',border:'none',cursor:'pointer',opacity:tab===t.id?1:0.5}}>
+            <span style={{fontSize:20}}>{t.icon}</span>
+            <span style={{fontSize:10,fontWeight:600,color:'#1B2A4A'}}>{t.label}</span>
+          </button>
+        ))}
+      </nav>
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
 </script>
 </body>
 </html>
