@@ -623,98 +623,220 @@ const JURY_MSGS = [
   { text:"Le jury apprécie la nuance.", icon:"🎯" },
 ];
 
+/* ═══════════════════════════════════════════════════════
+   COMPOSANTS INTERACTIFS DU GRIMOIRE
+═══════════════════════════════════════════════════════ */
+
+function InteractiveDropdown({ label, options }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <span style={{position:'relative', display:'inline-block'}}>
+      <button 
+        onClick={(e) => { e.stopPropagation(); setOpen(!open); }} 
+        style={{background:'#1B2A4A', color:'#fff', padding:'3px 8px', borderRadius:6, margin:'0 4px', fontSize:12, fontWeight:700, border:'none', cursor:'pointer', fontFamily:'DM Sans', verticalAlign:'middle', boxShadow:'0 2px 4px rgba(27,42,74,0.2)'}}>
+        {label} ▾
+      </button>
+      {open && (
+        <span style={{position:'absolute', top:'120%', left:0, background:'#fff', border:'1px solid #E5E7EB', borderRadius:8, padding:'10px', minWidth:320, zIndex:50, boxShadow:'0 10px 25px rgba(0,0,0,0.15)', display:'flex', flexDirection:'column', gap:6, textAlign:'left'}}>
+          <div style={{fontSize:10, color:'#9CA3AF', fontWeight:800, textTransform:'uppercase'}}>Options à adapter :</div>
+          {options.map((opt, i) => (
+            <div key={i} style={{fontSize:12, color:'#1B2A4A', padding:'8px', background:'#F9FAFB', borderRadius:6, lineHeight:1.4, fontWeight:500, border:'1px solid #F3F4F6'}}>
+              {opt}
+            </div>
+          ))}
+        </span>
+      )}
+    </span>
+  );
+}
+
+function InteractiveText({ parts }) {
+  return (
+    <div className="hl" style={{borderRadius:10, padding:'16px 20px', lineHeight: 2, fontSize: 14, color:'#1B2A4A', background: '#FAEDB5', marginBottom:12}}>
+      <div style={{fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.08em',color:'#92400E',marginBottom:10}}>⭐ Phrase d'ancrage interactive</div>
+      <div style={{fontStyle:'italic', fontWeight:500}}>
+        {parts.map((p, i) => {
+          if (p.text) return <span key={i}>{p.text}</span>;
+          if (p.var) return <InteractiveDropdown key={i} label={p.var} options={p.options} />;
+          return null;
+        })}
+      </div>
+    </div>
+  )
+}
+
+/* ═══════════════════════════════════════════════════════
+   DATA DU GRIMOIRE
+═══════════════════════════════════════════════════════ */
+
 const GRIMOIRE = [
   {
     id:"g1", num:"I", icon:"🎬", color:"#1B2A4A",
     titre:"Reformulation Visuelle & Émotions",
     duree:"45–60 sec",
-    ancrage:"« À la lecture de cet énoncé, je me projette dans une scène concrète: [décor + contexte personnel]. Face à cette situation, je suis d'emblée [émotion 1] car [raison courte], tout en éprouvant [émotion 2] lié à [raison courte]. Physiquement, je sens [symptôme]. »",
-    items:[
-      { titre:"Lieux mobilisables (Contextes)", texte:"Familial (cuisine, odeur de café) · Amis (verres qui tintent) · Quotidien (retour du sport) · Public (rue illuminée après l'entraînement)." },
-      { titre:"Dictionnaire : Danger / Urgence", texte:"Émotions : Alarmé, terrifié. Symptômes : Mon sang se glace dans mes veines, mes jambes flageolent." },
-      { titre:"Dictionnaire : Injustice / Harcèlement", texte:"Émotions : Indigné, outré, révolté. Symptômes : Ma mâchoire se crispe, je sens mon sang bouillir mais je me régule." },
-      { titre:"Dictionnaire : Détresse / Précarité", texte:"Émotions : Bouleversé, accablé, empli de compassion. Symptômes : Ma gorge se noue, lourdeur sur mes épaules." },
-      { titre:"Dictionnaire : Révélation / Tabou", texte:"Émotions : Décontenancé, sidéré, stupéfait. Symptômes : J'ai le souffle coupé, léger mouvement de recul." }
+    interactiveText: [
+      { text: "« À la lecture de cet énoncé, je me projette dans une scène concrète : " },
+      { var: "[Décor + Contexte]", options: ["Familial : Je suis dans la cuisine de mes parents, l'odeur du café embaume...", "Amis : C'est un vendredi soir chez mon meilleur ami, les verres tintent...", "Quotidien : En rentrant du sport, sac sur l'épaule...", "Public : Je marche rue d'Alsace-Lorraine, les lumières s'allument..."] },
+      { text: ". Face à cette situation, je suis d'emblée " },
+      { var: "[Émotion 1]", options: ["Danger : Alarmé, terrifié", "Injustice : Indigné, outré, révolté", "Détresse : Bouleversé, accablé, empli de compassion", "Révélation : Décontenancé, sidéré, stupéfait"] },
+      { text: " car [raison courte], tout en éprouvant [émotion 2] lié à [raison courte]. Physiquement, je sens " },
+      { var: "[Symptôme corporel]", options: ["Danger : Mon sang se glace, mes jambes flageolent", "Injustice : Ma mâchoire se crispe, je sens mon sang bouillir", "Détresse : Ma gorge se noue, je ressens une lourdeur", "Révélation : J'ai le souffle coupé, je marque un recul"] },
+      { text: ". »" }
+    ],
+    items: [
+      { titre:"Astuce", texte:"Varie les contextes pour ne pas avoir l'air d'un robot. La précision du détail capte l'attention du jury." }
     ]
   },
   {
     id:"g2", num:"II", icon:"🔍", color:"#5C7A62",
     titre:"Compréhension & Hypothèses Narratives",
     duree:"1 min 30",
-    ancrage:"« Cependant, pour me prémunir du biais fondamental d'attribution, je m'interdis tout jugement hâtif et je reste ouvert à toutes les hypothèses. J'émets l'hypothèse que cette situation dissimule en réalité [Titre de la Clé]. Afin de vérifier cette piste en toute objectivité, j'adopte une posture d'ouverture et je vais entreprendre de recueillir des informations. En instaurant ce climat de confiance, la carapace se fissure et elle s'effondre en m'avouant que... Cet échange s'avère révélateur : effectivement, je découvre que [Détail narratif de la clé]. »",
-    items:[
-      { titre:"Astuces de recueil d'infos", texte:"1. Le Tiers : Prendre à part un témoin pour recouper les faits. 2. Le Contexte : L'isoler de la foule, lui servir un verre d'eau pour libérer la parole." },
-      { titre:"Clé 1 — Handicap Invisible (Sclérose, TDAH, Surdité)", texte:"L'individu ne fait pas un caprice, il est terrifié par la honte de devoir justifier sa douleur ou son incapacité en public." },
-      { titre:"Clé 2 — Urgence Sociale & Précarité", texte:"Rongé par la honte, le parent a perdu son travail. L'individu agit par pur instinct de survie pour ne pas finir à la rue." },
-      { titre:"Clé 3 — Épuisement Extrême / Burn-out", texte:"Écrasé par la pression académique et familiale, il n'a pas dormi depuis 72h et perd totalement pied." },
-      { titre:"Clé 4 — Emprise & Harcèlement", texte:"L'individu est terrorisé, subit des menaces quotidiennes et a peur des représailles s'il parle." },
-      { titre:"Clé 5 — Déficit de Communication / Choc Post-Traumatique", texte:"La colère cache un traumatisme récent (agression tue sous silence) ou un énorme malentendu devenu ressentiment." },
-      { titre:"Clé 6 — Conflit d'intérêts / Pression réussite", texte:"Peur panique de l'échec ou détresse financière imminente altérant le discernement éthique. Prisonnier d'un engrenage." },
-      { titre:"Clé 7 — Conflit de Valeurs / Éthique", texte:"Derrière la radicalité se cache une peur, un traumatisme culturel. Garder la neutralité tout en posant un cadre éthique." }
+    interactiveText: [
+      { text: "« Cependant, pour me prémunir du biais fondamental d'attribution, je m'interdis tout jugement hâtif et je reste ouvert à toutes les hypothèses. J'émets l'hypothèse que cette situation dissimule en réalité " },
+      { var: "[Titre de la Clé]", options: ["1. Le Handicap Invisible (Sclérose, TDAH, Surdité)", "2. L'Urgence Sociale et Précarité", "3. L'Épuisement Extrême / Burn-out", "4. L'Emprise et le Harcèlement", "5. Le Déficit de Communication / Choc Post-Trauma", "6. Le Conflit d'Intérêts / Pression de la réussite", "7. Le Conflit de Valeurs / Éthique"] },
+      { text: ". Afin de vérifier cette piste en toute objectivité, j'adopte une posture d'ouverture et je vais entreprendre de recueillir des informations pour comprendre la situation dans sa globalité. Dans un premier temps, " },
+      { var: "[Astuce 1 : Recoupement]", options: ["je prends à part un proche pour recouper les faits et obtenir un éclairage extérieur.", "j'interroge discrètement les témoins de la scène.", "je me renseigne auprès d'un encadrant pour contextualiser."] },
+      { text: ". Ensuite, pour libérer sa parole, je décide de " },
+      { var: "[Astuce 2 : Cadre]", options: ["l'isoler de la foule.", "l'emmener dans le salon et lui servir un verre d'eau.", "l'inviter à s'asseoir à l'écart."] },
+      { text: " et j'initie un dialogue bienveillant. " },
+      { var: "[Transition Narrative]", options: ["...en instaurant ce climat de confiance, la carapace se fissure et elle s'effondre en m'avouant que...", "...face à mon écoute active, les masques tombent et j'apprends avec effroi que...", "...loin de mes préjugés initiaux, la discussion met en lumière une vérité bouleversante..."] },
+      { text: " Cet échange s'avère révélateur : effectivement, je découvre que [Détail narratif de la clé]. »" }
+    ],
+    items: [
+      { titre:"Les 7 'Sauve-Tout'", texte:"Mémorise bien le Trousseau de Clés. C'est l'ossature de ta compréhension et ce qui donne de l'épaisseur à ton personnage." }
     ]
   },
   {
     id:"g3", num:"III", icon:"⚖️", color:"#C9A84C",
     titre:"Décisions Alternatives — Balance B/R",
     duree:"1 min",
-    ancrage:"« Maintenant que j'ai mieux compris la situation, plusieurs options s'offrent à moi. Tout d'abord, je peux décider de ne pas agir. Dans le pire des cas, [risque fatal]. Dans le meilleur des cas, le problème finit par se résoudre de lui-même, mais cela me semble très peu probable au vu des circonstances. À l'inverse, il m'est possible d'opter pour l'action. Dans le pire des cas, mon implication est mal perçue : [risque social]. Mais dans le meilleur des cas, je parviens à [objectif de sécurité/soutien]. Au vu de ces éléments, ma décision est sans équivoque : j'agis, car c'est incontestablement la voie la plus lucide et mutuellement bénéfique. »",
-    items:[
-      { titre:"Objectif de cette étape", texte:"Prouver au jury que ton action n'est pas impulsive mais le fruit d'une évaluation claire de la balance bénéfice/risque." }
+    interactiveText: [
+      { text: "« Maintenant que j'ai mieux compris la situation, plusieurs options s'offrent à moi. Tout d'abord, je peux décider de ne pas agir. Dans le pire des cas, " },
+      { var: "[Risque fatal]", options: ["son état de santé s'aggrave irrémédiablement", "la situation dégénère et il s'isole totalement"] },
+      { text: ". Dans le meilleur des cas, le problème finit par se résoudre de lui-même, mais cela me semble très peu probable au vu des circonstances actuelles. À l'inverse, il m'est possible d'opter pour l'action. Dans le pire des cas, mon implication est mal perçue : " },
+      { var: "[Risque social]", options: ["elle se braque et m'en veut d'être intervenu", "je crée un conflit passager"] },
+      { text: ". Mais dans le meilleur des cas, je parviens à " },
+      { var: "[Objectif]", options: ["la mettre en sécurité de façon pérenne", "l'aider à trouver une solution à long terme"] },
+      { text: ". Au vu de ces éléments, ma décision est sans équivoque : j'agis, car c'est incontestablement la voie la plus lucide et mutuellement bénéfique. »" }
+    ],
+    items: [
+      { titre:"L'objectif de la balance", texte:"Montrer au jury que tu n'es pas impulsif. L'action est le fruit d'une évaluation médicale et sociale mesurée." }
     ]
   },
   {
     id:"g4", num:"IV", icon:"🛠️", color:"#1B2A4A",
     titre:"L'Intervention Narrative Modulable",
     duree:"1 min 30",
-    ancrage:"« Je déploie mon intervention immédiatement et avec assertivité. Je vais dans un premier temps : [Insérer l'Action Technique de la Matrice choisie]. [...] Ainsi, en alliant action immédiate, relais professionnel et présence humaine, je fais tout mon possible pour aider tout en respectant la personne. »",
-    items:[
-      { titre:"Algorithme d'intervention", texte:"Amorce + Matrice (A, B, C, D ou E) + Brique 1 (Geste) + Brique 2 (Action) + Brique 3 (Relais) + Brique 4 (Extra-Mile) + Phrase de fin." },
-      { titre:"Matrice A — Médical / Urgence / Violence", texte:"Je propose de s'asseoir, verre d'eau. Obtention du consentement. Appel 15, 3919 ou Police. Relais SIMPPS/Psy. Reste jusqu'aux secours." },
-      { titre:"Matrice B — Social / Précarité / Échec", texte:"Je l'emmène dans un café calme pour sa fierté. Tact sans créer de dépendance. Relais AS du CROUS. Dîner chez moi le week-end." },
-      { titre:"Matrice C — Relationnel / Conflit / Éthique", texte:"Pause et humour pour désamorcer. Communication non-violente pour compromis. Restaurant préféré pour réconciliation." },
-      { titre:"Matrice D — Légal / Secret (Ajout exhaustif)", texte:"Soutien inconditionnel + cadre sécurisant. Refus d'action illégale sans jugement. Accompagnement juridique ou CeGIDD." },
-      { titre:"Matrice E — Urgence Sécuritaire / Fuite", texte:"Analyse flash de l'environnement. Préservation absolue de l'intégrité physique. Fuite vers lieu public. Appel 17/18. Dépôt de plainte avec la victime." },
-      { titre:"Posture face à l'Autorité", texte:"Neutralité axiologique. Aucune servilité. Désaccord factuel et non-violent. Recours aux médiations (syndicats, scolarité) et traces écrites." }
+    interactiveText: [
+      { text: "« Je déploie mon intervention immédiatement et avec assertivité. Dans un premier temps, " },
+      { var: "[Brique 1 : Geste Humain]", options: ["Matrice A (Urgence) : Je lui propose de s'asseoir, apporte un verre d'eau, prête mon pull.", "Matrice B (Social) : Je l'emmène dans un café calme à l'abri des regards.", "Matrice C (Relationnel) : Je marque une pause et j'utilise l'humour pour désamorcer.", "Matrice D (Légal) : Je lui réaffirme mon soutien tout en posant un cadre sécurisant.", "Matrice E (Sécuritaire) : Analyse flash, rupture immédiate du contact visuel avec la menace.", "Autorité : Je conserve une neutralité axiologique absolue, sans servilité."] },
+      { text: ". Ensuite, " },
+      { var: "[Brique 2 : Action Technique]", options: ["Matrice A (Urgence) : J'obtiens son consentement, nous contactons le 15, 3919 ou la Police.", "Matrice B (Social) : J'aborde la situation avec tact. Avance financière discrète sans dépendance.", "Matrice C (Relationnel) : Je refuse de rompre le dialogue, on trouve un compromis.", "Matrice D (Légal) : Je refuse l'action illégale fermement sans jugement, propose alternative.", "Matrice E (Sécuritaire) : Fuite stratégique. Alerte immédiate (17/18) factuelle.", "Autorité : Je refuse l'affrontement. Recours aux médiations (syndicats) et traces écrites."] },
+      { text: ". Pour que la solution soit pérenne, je passe le relais : " },
+      { var: "[Brique 3 : Relais]", options: ["Matrice A (Urgence) : Relais pérenne par le SIMPPS/Psychiatre. Je reste jusqu'aux secours.", "Matrice B (Social) : Relais AS du CROUS.", "Matrice C (Relationnel) : Nous convenons de faire le point à froid dans quelques jours.", "Matrice D (Légal) : Accompagnement juridique, CeGIDD ou Planning Familial.", "Matrice E (Sécuritaire) : Dépôt de plainte formel.", "Autorité : Entretien formel tripartite en terrain neutre."] },
+      { text: ". Et bien sûr, à mon échelle, je garde le lien : " },
+      { var: "[Brique 4 : L'Extra-Mile]", options: ["Logistique : Le lendemain, je l'aide à trier ses papiers / rédiger son CV.", "Affectif : J'organise un repas avec nos amis / je sollicite ses parents.", "Physique : Je l'emmène courir avec moi / on fait une balade en forêt.", "Spécifique B : Dîner chez moi ce week-end pour rompre l'isolement.", "Spécifique C : Je l'invite dans son restaurant préféré la semaine prochaine.", "Spécifique E : Mise en place d'un suivi psychologique à distance."] },
+      { text: ". Ainsi, en alliant action immédiate, relais professionnel et présence humaine, je fais tout mon possible pour aider tout en respectant la personne. »" }
+    ],
+    items: [
+      { titre:"La mécanique de l'algorithme", texte:"Brique 1 (15s) + Brique 2 (40s) + Brique 3 (15s) + Brique 4 (15s). Tout au PRÉSENT de l'indicatif." }
     ]
   },
   {
     id:"g5", num:"V", icon:"✅", color:"#5C7A62",
     titre:"Conclusions Modulables",
     duree:"30 sec",
-    ancrage:"« En conclusion, je suis satisfait de voir que la synergie des actions que j'ai pu mettre en œuvre a permis à [Prénom] de [Fin A, B ou C]. Je me réjouis que cette démarche, alliée à mon humanité, ait porté ses fruits. »",
-    items:[
-      { titre:"Fin A — Urgence", texte:"« ...d'être enfin hors de danger et de se sentir soutenue. »" },
-      { titre:"Fin B — Social", texte:"« ...de stabiliser sa situation et de reprendre ses études sereinement. »" },
-      { titre:"Fin C — Relationnel", texte:"« ...de dissiper tout malentendu et de renforcer notre lien. »" }
-    ]
+    interactiveText: [
+      { text: "« En conclusion, je suis satisfait de voir que la synergie des actions que j'ai pu mettre en œuvre a permis à [Prénom] de " },
+      { var: "[Fin A, B ou C]", options: ["Fin A (Urgence) : d'être enfin hors de danger et de se sentir soutenue.", "Fin B (Social) : de stabiliser sa situation et de reprendre ses études sereinement.", "Fin C (Relationnel) : de dissiper tout malentendu et de renforcer notre amitié."] },
+      { text: ". Je me réjouis que cette démarche ait porté ses fruits. »" }
+    ],
+    items: []
   },
   {
     id:"g6", num:"VI", icon:"🛡️", color:"#A83232",
     titre:"La Riposte — Maîtriser l'Entretien Jury",
     duree:"8 points",
-    ancrage:"« Si je comprends bien votre question, vous me demandez ce que je ferais si… » (Phrase Pare-Chocs)",
-    items:[
-      { titre:"Loi 1 : Disque Rayé", texte:"« Ma réponse reste non. C'est illégal. Je l'aide autrement (115, avance financière). »" },
-      { titre:"Loi 2 : Maintien du dialogue", texte:"« Je ne cède pas au chantage, mais je reste à l'écoute de sa souffrance. »" },
-      { titre:"Loi 3 : Adaptabilité", texte:"« Ce nouvel élément change mon analyse, je réajuste mon plan sans me braquer. »" },
-      { titre:"Loi 4 : Urgence Vitale", texte:"« Risque suicidaire imminent = bris du secret médical. J'appelle le 15. »" },
-      { titre:"Loi 5 : Attention à soi", texte:"« Un soignant épuisé est inutile. Je pose des limites et je passe le relais. »" },
-      { titre:"Face à la pression de l'employeur", texte:"« L'éthique et la sécurité du patient priment sur la hiérarchie. Je trace mon désaccord par écrit et j'alerte les autorités compétentes. »" }
+    interactiveText: [
+      { text: "« Si je comprends bien votre question, vous me demandez ce que je ferais si… (Phrase Pare-chocs). Face à cela, j'applique : " },
+      { var: "[Les 5 Lois Fondamentales]", options: ["1. Disque Rayé : Ma réponse reste non. C'est illégal. Je l'aide autrement.", "2. Maintien du dialogue : Je ne cède pas au chantage, mais reste à l'écoute.", "3. Adaptabilité : Ce nouvel élément change mon analyse, je réajuste sans me braquer.", "4. Urgence Vitale : Risque suicidaire = bris du secret médical. Appel 15.", "5. Attention à soi : Un soignant épuisé est inutile. Je pose mes limites et passe le relais."] },
+      { text: ". »" }
+    ],
+    items: [
+      { titre:"Pression Hiérarchique (Ordre illégal)", texte:"« L'éthique et la sécurité du patient priment sur la hiérarchie. Je trace mon désaccord par écrit et j'alerte les autorités compétentes. »" },
+      { titre:"Motivation Profonde", texte:"« Pour moi, être futur soignant, c'est allier humanité, responsabilité et respect de la dignité de chacun. »" }
     ]
   },
   {
     id:"g7", num:"✦", icon:"📚", color:"#C9A84C",
     titre:"Lexique de Prestige & Tics à bannir",
     duree:"À mémoriser",
-    ancrage:"« Je remplace mes tics de langage pour adopter une posture professionnelle et affirmée. »",
+    interactiveText: [],
     items:[
-      { titre:"Mots à BANNIR de ton discours", texte:"D'accord/D'accordo (silence à la place) · Effectivement (Assurément/En réalité) · Cependant (Néanmoins/Toutefois) · J'essaie donc (Je propose/J'agis) · C'est pas bien (Délétère/Illégal) · Du coup (Pause)." },
-      { titre:"Attitude & Action au Présent", texte:"Bannis le conditionnel. Dis « Je propose une consultation » (et non « je pourrais proposer »). Baisse le ton pour une confidence, affirme-le pour une décision." },
-      { titre:"Lexique de précision", texte:"Anamnèse · Libre arbitre / Consentement · Synergie des actions · Dès lors · Par conséquent · Nonobstant · Biais d'ancrage / de surconfiance." },
-      { titre:"Les 3 Piliers (Extra-Mile)", texte:"Pilier Logistique : trier papiers, refaire CV, courses. Pilier Affectif : solliciter parents, repas amis communs. Pilier Physique : courir ensemble, balade forêt." }
+      { titre:"Mots à BANNIR de ton discours", texte:"D'accord/D'accordo (silence à la place) · Effectivement (Assurément/En réalité) · Cependant (Néanmoins/Toutefois) · J'essaie donc (Je propose/J'agis) · C'est pas bien (Délétère/Illégal) · Du coup (Pause respiratoire)." },
+      { titre:"Attitude & Action au Présent", texte:"Bannis le conditionnel ! Dis « Je propose une consultation » (et non « je pourrais proposer »). Baisse le ton pour une confidence, affirme-le pour une décision. Ne reste pas figé, utilise tes mains." },
+      { titre:"Lexique de précision", texte:"Anamnèse · Libre arbitre / Consentement · Synergie des actions · Dès lors · Par conséquent · Nonobstant · Biais d'ancrage / Biais de surconfiance." }
     ]
   }
 ];
+
+function GrimoireSection({ sec, open, onToggle }) {
+  return (
+    <div className="card" style={{overflow:'hidden',border:`1px solid ${sec.color}22`}}>
+      <button onClick={onToggle} style={{width:'100%',padding:'16px',display:'flex',alignItems:'center',justifyContent:'space-between',background:'none',border:'none',cursor:'pointer',textAlign:'left'}}>
+        <div style={{display:'flex',alignItems:'center',gap:12}}>
+          <span style={{fontSize:24}}>{sec.icon}</span>
+          <div>
+            <div style={{fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.08em',color:sec.color,marginBottom:2}}>
+              Grand {sec.num} · {sec.duree}
+            </div>
+            <div style={{fontFamily:'Playfair Display, serif',fontWeight:700,fontSize:15,color:'#1B2A4A'}}>{sec.titre}</div>
+          </div>
+        </div>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2.5" style={{flexShrink:0,transform:open?'rotate(180deg)':'rotate(0deg)',transition:'transform .3s ease'}}>
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </button>
+
+      <div className={`acc-body ${open?'open':''}`}>
+        <div className="acc-inner">
+          <div style={{padding:'0 16px 20px',display:'flex',flexDirection:'column',gap:14}}>
+            
+            {sec.interactiveText && sec.interactiveText.length > 0 && (
+              <InteractiveText parts={sec.interactiveText} />
+            )}
+
+            {sec.items && sec.items.map((item,i)=>(
+              <div key={i} style={{background:'#F9FAFB', padding:'10px 14px', borderRadius:8, borderLeft:`3px solid ${sec.color}`}}>
+                <div style={{fontSize:11,fontWeight:800,textTransform:'uppercase',letterSpacing:'0.07em',color:sec.color,marginBottom:5}}>
+                  {item.titre}
+                </div>
+                <p style={{fontSize:13,color:'#4B5563',lineHeight:1.65}}>{item.texte}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Grimoire() {
+  const [open, setOpen] = useState({g1:true, g2:true});
+  const toggle = id => setOpen(p=>({...p,[id]:!p[id]}));
+
+  return (
+    <div style={{display:'flex',flexDirection:'column',gap:12}} className="anim-up">
+      <div className="card" style={{padding:'16px',background:'linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)',border:'1px solid #C9A84C33'}}>
+        <div style={{fontFamily:'Playfair Display, serif',fontWeight:700,fontSize:18,color:'#1B2A4A',marginBottom:4}}>Le Grimoire Méthodologique</div>
+        <p style={{fontSize:13,color:'#6B7280'}}>Clique sur les encarts bleus dans le texte pour faire apparaître tes variables et matrices.</p>
+      </div>
+      {GRIMOIRE.map(s=>(
+        <GrimoireSection key={s.id} sec={s} open={!!open[s.id]} onToggle={()=>toggle(s.id)}/>
+      ))}
+    </div>
+  );
+}
 
 
 const MASTERY = {
