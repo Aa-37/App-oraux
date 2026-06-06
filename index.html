@@ -624,13 +624,31 @@ const JURY_MSGS = [
 ];
 
 /* ═══════════════════════════════════════════════════════
-   COMPOSANTS INTERACTIFS DU GRIMOIRE
+   COMPOSANTS INTERACTIFS DU GRIMOIRE — VERSION CORRIGÉE
+   
+   CORRECTIONS APPLIQUÉES :
+   1. `var` (mot-clé réservé JS) → `varKey` dans toutes les données
+      et dans le composant InteractiveText
+   2. Fermeture du dropdown au clic extérieur (useEffect + useRef)
 ═══════════════════════════════════════════════════════ */
 
 function InteractiveDropdown({ label, options }) {
   const [open, setOpen] = useState(false);
+  const ref = useRef(null); // FIX 2 : référence pour détecter clic extérieur
+
+  // FIX 2 : ferme le dropdown si on clique ailleurs
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (ref.current && !ref.current.contains(e.target)) {
+        setOpen(false);
+      }
+    }
+    if (open) document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [open]);
+
   return (
-    <span style={{position:'relative', display:'inline-block'}}>
+    <span ref={ref} style={{position:'relative', display:'inline-block'}}>
       <button 
         onClick={(e) => { e.stopPropagation(); setOpen(!open); }} 
         style={{background:'#1B2A4A', color:'#fff', padding:'3px 8px', borderRadius:6, margin:'0 4px', fontSize:12, fontWeight:700, border:'none', cursor:'pointer', fontFamily:'DM Sans', verticalAlign:'middle', boxShadow:'0 2px 4px rgba(27,42,74,0.2)'}}>
@@ -657,7 +675,8 @@ function InteractiveText({ parts }) {
       <div style={{fontStyle:'italic', fontWeight:500}}>
         {parts.map((p, i) => {
           if (p.text) return <span key={i}>{p.text}</span>;
-          if (p.var) return <InteractiveDropdown key={i} label={p.var} options={p.options} />;
+          // FIX 1 : p.varKey au lieu de p.var (var = mot-clé réservé JS)
+          if (p.varKey) return <InteractiveDropdown key={i} label={p.varKey} options={p.options} />;
           return null;
         })}
       </div>
@@ -667,6 +686,7 @@ function InteractiveText({ parts }) {
 
 /* ═══════════════════════════════════════════════════════
    DATA DU GRIMOIRE
+   FIX 1 : toutes les clés `var:` remplacées par `varKey:`
 ═══════════════════════════════════════════════════════ */
 
 const GRIMOIRE = [
@@ -676,11 +696,11 @@ const GRIMOIRE = [
     duree:"45–60 sec",
     interactiveText: [
       { text: "« À la lecture de cet énoncé, je me projette dans une scène concrète : " },
-      { var: "[Décor + Contexte]", options: ["Familial : Je suis dans la cuisine de mes parents, l'odeur du café embaume...", "Amis : C'est un vendredi soir chez mon meilleur ami, les verres tintent...", "Quotidien : En rentrant du sport, sac sur l'épaule...", "Public : Je marche rue d'Alsace-Lorraine, les lumières s'allument..."] },
+      { varKey: "[Décor + Contexte]", options: ["Familial : Je suis dans la cuisine de mes parents, l'odeur du café embaume...", "Amis : C'est un vendredi soir chez mon meilleur ami, les verres tintent...", "Quotidien : En rentrant du sport, sac sur l'épaule...", "Public : Je marche rue d'Alsace-Lorraine, les lumières s'allument..."] },
       { text: ". Face à cette situation, je suis d'emblée " },
-      { var: "[Émotion 1]", options: ["Danger : Alarmé, terrifié", "Injustice : Indigné, outré, révolté", "Détresse : Bouleversé, accablé, empli de compassion", "Révélation : Décontenancé, sidéré, stupéfait"] },
+      { varKey: "[Émotion 1]", options: ["Danger : Alarmé, terrifié", "Injustice : Indigné, outré, révolté", "Détresse : Bouleversé, accablé, empli de compassion", "Révélation : Décontenancé, sidéré, stupéfait"] },
       { text: " car [raison courte], tout en éprouvant [émotion 2] lié à [raison courte]. Physiquement, je sens " },
-      { var: "[Symptôme corporel]", options: ["Danger : Mon sang se glace, mes jambes flageolent", "Injustice : Ma mâchoire se crispe, je sens mon sang bouillir", "Détresse : Ma gorge se noue, je ressens une lourdeur", "Révélation : J'ai le souffle coupé, je marque un recul"] },
+      { varKey: "[Symptôme corporel]", options: ["Danger : Mon sang se glace, mes jambes flageolent", "Injustice : Ma mâchoire se crispe, je sens mon sang bouillir", "Détresse : Ma gorge se noue, je ressens une lourdeur", "Révélation : J'ai le souffle coupé, je marque un recul"] },
       { text: ". »" }
     ],
     items: [
@@ -693,13 +713,13 @@ const GRIMOIRE = [
     duree:"1 min 30",
     interactiveText: [
       { text: "« Cependant, pour me prémunir du biais fondamental d'attribution, je m'interdis tout jugement hâtif et je reste ouvert à toutes les hypothèses. J'émets l'hypothèse que cette situation dissimule en réalité " },
-      { var: "[Titre de la Clé]", options: ["1. Le Handicap Invisible (Sclérose, TDAH, Surdité)", "2. L'Urgence Sociale et Précarité", "3. L'Épuisement Extrême / Burn-out", "4. L'Emprise et le Harcèlement", "5. Le Déficit de Communication / Choc Post-Trauma", "6. Le Conflit d'Intérêts / Pression de la réussite", "7. Le Conflit de Valeurs / Éthique"] },
+      { varKey: "[Titre de la Clé]", options: ["1. Le Handicap Invisible (Sclérose, TDAH, Surdité)", "2. L'Urgence Sociale et Précarité", "3. L'Épuisement Extrême / Burn-out", "4. L'Emprise et le Harcèlement", "5. Le Déficit de Communication / Choc Post-Trauma", "6. Le Conflit d'Intérêts / Pression de la réussite", "7. Le Conflit de Valeurs / Éthique"] },
       { text: ". Afin de vérifier cette piste en toute objectivité, j'adopte une posture d'ouverture et je vais entreprendre de recueillir des informations pour comprendre la situation dans sa globalité. Dans un premier temps, " },
-      { var: "[Astuce 1 : Recoupement]", options: ["je prends à part un proche pour recouper les faits et obtenir un éclairage extérieur.", "j'interroge discrètement les témoins de la scène.", "je me renseigne auprès d'un encadrant pour contextualiser."] },
+      { varKey: "[Astuce 1 : Recoupement]", options: ["je prends à part un proche pour recouper les faits et obtenir un éclairage extérieur.", "j'interroge discrètement les témoins de la scène.", "je me renseigne auprès d'un encadrant pour contextualiser."] },
       { text: ". Ensuite, pour libérer sa parole, je décide de " },
-      { var: "[Astuce 2 : Cadre]", options: ["l'isoler de la foule.", "l'emmener dans le salon et lui servir un verre d'eau.", "l'inviter à s'asseoir à l'écart."] },
+      { varKey: "[Astuce 2 : Cadre]", options: ["l'isoler de la foule.", "l'emmener dans le salon et lui servir un verre d'eau.", "l'inviter à s'asseoir à l'écart."] },
       { text: " et j'initie un dialogue bienveillant. " },
-      { var: "[Transition Narrative]", options: ["...en instaurant ce climat de confiance, la carapace se fissure et elle s'effondre en m'avouant que...", "...face à mon écoute active, les masques tombent et j'apprends avec effroi que...", "...loin de mes préjugés initiaux, la discussion met en lumière une vérité bouleversante..."] },
+      { varKey: "[Transition Narrative]", options: ["...en instaurant ce climat de confiance, la carapace se fissure et elle s'effondre en m'avouant que...", "...face à mon écoute active, les masques tombent et j'apprends avec effroi que...", "...loin de mes préjugés initiaux, la discussion met en lumière une vérité bouleversante..."] },
       { text: " Cet échange s'avère révélateur : effectivement, je découvre que [Détail narratif de la clé]. »" }
     ],
     items: [
@@ -712,11 +732,11 @@ const GRIMOIRE = [
     duree:"1 min",
     interactiveText: [
       { text: "« Maintenant que j'ai mieux compris la situation, plusieurs options s'offrent à moi. Tout d'abord, je peux décider de ne pas agir. Dans le pire des cas, " },
-      { var: "[Risque fatal]", options: ["son état de santé s'aggrave irrémédiablement", "la situation dégénère et il s'isole totalement"] },
+      { varKey: "[Risque fatal]", options: ["son état de santé s'aggrave irrémédiablement", "la situation dégénère et il s'isole totalement"] },
       { text: ". Dans le meilleur des cas, le problème finit par se résoudre de lui-même, mais cela me semble très peu probable au vu des circonstances actuelles. À l'inverse, il m'est possible d'opter pour l'action. Dans le pire des cas, mon implication est mal perçue : " },
-      { var: "[Risque social]", options: ["elle se braque et m'en veut d'être intervenu", "je crée un conflit passager"] },
+      { varKey: "[Risque social]", options: ["elle se braque et m'en veut d'être intervenu", "je crée un conflit passager"] },
       { text: ". Mais dans le meilleur des cas, je parviens à " },
-      { var: "[Objectif]", options: ["la mettre en sécurité de façon pérenne", "l'aider à trouver une solution à long terme"] },
+      { varKey: "[Objectif]", options: ["la mettre en sécurité de façon pérenne", "l'aider à trouver une solution à long terme"] },
       { text: ". Au vu de ces éléments, ma décision est sans équivoque : j'agis, car c'est incontestablement la voie la plus lucide et mutuellement bénéfique. »" }
     ],
     items: [
@@ -729,13 +749,13 @@ const GRIMOIRE = [
     duree:"1 min 30",
     interactiveText: [
       { text: "« Je déploie mon intervention immédiatement et avec assertivité. Dans un premier temps, " },
-      { var: "[Brique 1 : Geste Humain]", options: ["Matrice A (Urgence) : Je lui propose de s'asseoir, apporte un verre d'eau, prête mon pull.", "Matrice B (Social) : Je l'emmène dans un café calme à l'abri des regards.", "Matrice C (Relationnel) : Je marque une pause et j'utilise l'humour pour désamorcer.", "Matrice D (Légal) : Je lui réaffirme mon soutien tout en posant un cadre sécurisant.", "Matrice E (Sécuritaire) : Analyse flash, rupture immédiate du contact visuel avec la menace.", "Autorité : Je conserve une neutralité axiologique absolue, sans servilité."] },
+      { varKey: "[Brique 1 : Geste Humain]", options: ["Matrice A (Urgence) : Je lui propose de s'asseoir, apporte un verre d'eau, prête mon pull.", "Matrice B (Social) : Je l'emmène dans un café calme à l'abri des regards.", "Matrice C (Relationnel) : Je marque une pause et j'utilise l'humour pour désamorcer.", "Matrice D (Légal) : Je lui réaffirme mon soutien tout en posant un cadre sécurisant.", "Matrice E (Sécuritaire) : Analyse flash, rupture immédiate du contact visuel avec la menace.", "Autorité : Je conserve une neutralité axiologique absolue, sans servilité."] },
       { text: ". Ensuite, " },
-      { var: "[Brique 2 : Action Technique]", options: ["Matrice A (Urgence) : J'obtiens son consentement, nous contactons le 15, 3919 ou la Police.", "Matrice B (Social) : J'aborde la situation avec tact. Avance financière discrète sans dépendance.", "Matrice C (Relationnel) : Je refuse de rompre le dialogue, on trouve un compromis.", "Matrice D (Légal) : Je refuse l'action illégale fermement sans jugement, propose alternative.", "Matrice E (Sécuritaire) : Fuite stratégique. Alerte immédiate (17/18) factuelle.", "Autorité : Je refuse l'affrontement. Recours aux médiations (syndicats) et traces écrites."] },
+      { varKey: "[Brique 2 : Action Technique]", options: ["Matrice A (Urgence) : J'obtiens son consentement, nous contactons le 15, 3919 ou la Police.", "Matrice B (Social) : J'aborde la situation avec tact. Avance financière discrète sans dépendance.", "Matrice C (Relationnel) : Je refuse de rompre le dialogue, on trouve un compromis.", "Matrice D (Légal) : Je refuse l'action illégale fermement sans jugement, propose alternative.", "Matrice E (Sécuritaire) : Fuite stratégique. Alerte immédiate (17/18) factuelle.", "Autorité : Je refuse l'affrontement. Recours aux médiations (syndicats) et traces écrites."] },
       { text: ". Pour que la solution soit pérenne, je passe le relais : " },
-      { var: "[Brique 3 : Relais]", options: ["Matrice A (Urgence) : Relais pérenne par le SIMPPS/Psychiatre. Je reste jusqu'aux secours.", "Matrice B (Social) : Relais AS du CROUS.", "Matrice C (Relationnel) : Nous convenons de faire le point à froid dans quelques jours.", "Matrice D (Légal) : Accompagnement juridique, CeGIDD ou Planning Familial.", "Matrice E (Sécuritaire) : Dépôt de plainte formel.", "Autorité : Entretien formel tripartite en terrain neutre."] },
+      { varKey: "[Brique 3 : Relais]", options: ["Matrice A (Urgence) : Relais pérenne par le SIMPPS/Psychiatre. Je reste jusqu'aux secours.", "Matrice B (Social) : Relais AS du CROUS.", "Matrice C (Relationnel) : Nous convenons de faire le point à froid dans quelques jours.", "Matrice D (Légal) : Accompagnement juridique, CeGIDD ou Planning Familial.", "Matrice E (Sécuritaire) : Dépôt de plainte formel.", "Autorité : Entretien formel tripartite en terrain neutre."] },
       { text: ". Et bien sûr, à mon échelle, je garde le lien : " },
-      { var: "[Brique 4 : L'Extra-Mile]", options: ["Logistique : Le lendemain, je l'aide à trier ses papiers / rédiger son CV.", "Affectif : J'organise un repas avec nos amis / je sollicite ses parents.", "Physique : Je l'emmène courir avec moi / on fait une balade en forêt.", "Spécifique B : Dîner chez moi ce week-end pour rompre l'isolement.", "Spécifique C : Je l'invite dans son restaurant préféré la semaine prochaine.", "Spécifique E : Mise en place d'un suivi psychologique à distance."] },
+      { varKey: "[Brique 4 : L'Extra-Mile]", options: ["Logistique : Le lendemain, je l'aide à trier ses papiers / rédiger son CV.", "Affectif : J'organise un repas avec nos amis / je sollicite ses parents.", "Physique : Je l'emmène courir avec moi / on fait une balade en forêt.", "Spécifique B : Dîner chez moi ce week-end pour rompre l'isolement.", "Spécifique C : Je l'invite dans son restaurant préféré la semaine prochaine.", "Spécifique E : Mise en place d'un suivi psychologique à distance."] },
       { text: ". Ainsi, en alliant action immédiate, relais professionnel et présence humaine, je fais tout mon possible pour aider tout en respectant la personne. »" }
     ],
     items: [
@@ -748,7 +768,7 @@ const GRIMOIRE = [
     duree:"30 sec",
     interactiveText: [
       { text: "« En conclusion, je suis satisfait de voir que la synergie des actions que j'ai pu mettre en œuvre a permis à [Prénom] de " },
-      { var: "[Fin A, B ou C]", options: ["Fin A (Urgence) : d'être enfin hors de danger et de se sentir soutenue.", "Fin B (Social) : de stabiliser sa situation et de reprendre ses études sereinement.", "Fin C (Relationnel) : de dissiper tout malentendu et de renforcer notre amitié."] },
+      { varKey: "[Fin A, B ou C]", options: ["Fin A (Urgence) : d'être enfin hors de danger et de se sentir soutenue.", "Fin B (Social) : de stabiliser sa situation et de reprendre ses études sereinement.", "Fin C (Relationnel) : de dissiper tout malentendu et de renforcer notre amitié."] },
       { text: ". Je me réjouis que cette démarche ait porté ses fruits. »" }
     ],
     items: []
@@ -759,7 +779,7 @@ const GRIMOIRE = [
     duree:"8 points",
     interactiveText: [
       { text: "« Si je comprends bien votre question, vous me demandez ce que je ferais si… (Phrase Pare-chocs). Face à cela, j'applique : " },
-      { var: "[Les 5 Lois Fondamentales]", options: ["1. Disque Rayé : Ma réponse reste non. C'est illégal. Je l'aide autrement.", "2. Maintien du dialogue : Je ne cède pas au chantage, mais reste à l'écoute.", "3. Adaptabilité : Ce nouvel élément change mon analyse, je réajuste sans me braquer.", "4. Urgence Vitale : Risque suicidaire = bris du secret médical. Appel 15.", "5. Attention à soi : Un soignant épuisé est inutile. Je pose mes limites et passe le relais."] },
+      { varKey: "[Les 5 Lois Fondamentales]", options: ["1. Disque Rayé : Ma réponse reste non. C'est illégal. Je l'aide autrement.", "2. Maintien du dialogue : Je ne cède pas au chantage, mais reste à l'écoute.", "3. Adaptabilité : Ce nouvel élément change mon analyse, je réajuste sans me braquer.", "4. Urgence Vitale : Risque suicidaire = bris du secret médical. Appel 15.", "5. Attention à soi : Un soignant épuisé est inutile. Je pose mes limites et passe le relais."] },
       { text: ". »" }
     ],
     items: [
@@ -838,13 +858,13 @@ function Grimoire() {
   );
 }
 
-
 const MASTERY = {
   0:{ bg:'#F3F4F6', color:'#9CA3AF', label:'Non travaillé' },
   1:{ bg:'#FEE2E2', color:'#EF4444', label:'À retravailler' },
   2:{ bg:'#FEF3C7', color:'#D97706', label:'En progression' },
   3:{ bg:'#D1FAE5', color:'#059669', label:'Maîtrisé' },
 };
+
 
 /* ═══════════════════════════════════════════════════════
    HOOKS
