@@ -789,14 +789,18 @@ function Dashboard({ sessions, mastery }) {
   });
 
   const cats = [
-    {label:'Urgence',   color:'#A83232'},
-    {label:'Social',    color:'#5C7A62'},
-    {label:'Relationnel',color:'#1B2A4A'},
-    {label:'Éthique',   color:'#C9A84C'},
-    {label:'Santé',     color:'#7C3AED'},
-    {label:'Sécurité',  color:'#0891B2'},
-  ].map(c => ({...c, score: tagMap[c.label] ? Math.round(tagMap[c.label].sum/tagMap[c.label].n) : 0}))
-   .filter(c=>c.score>0);
+  {label:'Urgence',     color:'#A83232'},
+  {label:'Social',      color:'#5C7A62'},
+  {label:'Relationnel', color:'#1B2A4A'},
+  {label:'Éthique',     color:'#C9A84C'},
+  {label:'Santé',       color:'#7C3AED'},
+  {label:'Sécurité',    color:'#0891B2'},
+  {label:'Familial',    color:'#9D174D'},
+  {label:'Médical',     color:'#155E75'},
+  {label:'Précarité',   color:'#92400E'},
+].map(c => ({...c, score: tagMap[c.label] ? Math.round(tagMap[c.label].sum/tagMap[c.label].n) : 0}))
+ .filter(c => c.score > 0);
+
 
   return (
     <div style={{display:'flex',flexDirection:'column',gap:16}} className="anim-up">
@@ -958,20 +962,29 @@ function Repertoire({ mastery, setMastery }) {
 ═══════════════════════════════════════════════════════ */
 
 function Checklist({ items, checked, onChange }) {
+  const score = items.reduce((acc, item, i) => acc + (checked[i] ? item.max : 0), 0);
+  const totalMax = items.reduce((acc, item) => acc + item.max, 0);
   return (
     <div>
-      {items.map((item,i)=>(
-        <div key={i} className={`check-row ${checked[i]?'checked':''}`} onClick={()=>{
-          const n=[...checked]; n[i]=!n[i]; onChange(n);
+      {items.map((item, i) => (
+        <div key={i} className={`check-row ${checked[i]?'checked':''}`} onClick={() => {
+          const n = [...checked]; n[i] = !n[i]; onChange(n);
         }}>
           <div className={`check-box ${checked[i]?'on':''}`}>
-            {checked[i]&&<svg width="11" height="11" viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+            {checked[i] && <svg width="11" height="11" viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>}
           </div>
-          <span className="check-label" style={{fontSize:13,color:'#374151',lineHeight:1.45}}>{item}</span>
+          <div style={{flex:1, minWidth:0}}>
+            <span className="check-label" style={{fontSize:13, color:'#374151', lineHeight:1.45}}>{item.label}</span>
+            <div style={{fontSize:11, color:'#9CA3AF', marginTop:2, lineHeight:1.4}}>{item.desc}</div>
+          </div>
+          <div style={{fontSize:12, fontWeight:700, color: checked[i] ? '#5C7A62' : '#D1D5DB', marginLeft:8, flexShrink:0}}>
+            /{item.max}
+          </div>
         </div>
       ))}
-      <div style={{marginTop:10,textAlign:'right',fontSize:12,fontWeight:600,color:'#5C7A62'}}>
-        {checked.filter(Boolean).length}/{items.length} critères validés
+      <div style={{marginTop:10, display:'flex', alignItems:'center', justifyContent:'space-between'}}>
+        <span style={{fontSize:11, color:'#9CA3AF'}}>{checked.filter(Boolean).length}/{items.length} critères</span>
+        <span style={{fontSize:14, fontWeight:700, color:'#5C7A62'}}>{score.toFixed(1)} / {totalMax.toFixed(1)} pts</span>
       </div>
     </div>
   );
@@ -993,230 +1006,254 @@ function Arene({ onDone }) {
   const [toast, setToast] = useState(null);
   const [chk1, setChk1] = useState(Array(CHECKLIST_P1.length).fill(false));
   const [chk2, setChk2] = useState(Array(CHECKLIST_P2.length).fill(false));
-  const [activeQ, setActiveQ] = useState(0);
+  const [chkC, setChkC] = useState(Array(CHECKLIST_C.length).fill(false));
+  const [finalScore, setFinalScore] = useState(0);
   const timerRef = useRef(null);
   const juryRef  = useRef(null);
 
-  useEffect(()=>{
+  useEffect(() => {
     if (running && rem > 0) {
-      timerRef.current = setInterval(()=>{
-        setRem(p=>{
-          if(p<=1){ clearInterval(timerRef.current); setRunning(false); setDone(true); return 0; }
-          return p-1;
+      timerRef.current = setInterval(() => {
+        setRem(p => {
+          if (p <= 1) { clearInterval(timerRef.current); setRunning(false); setDone(true); return 0; }
+          return p - 1;
         });
-      },1000);
+      }, 1000);
     }
-    return ()=>clearInterval(timerRef.current);
-  },[running]);
+    return () => clearInterval(timerRef.current);
+  }, [running]);
 
-  useEffect(()=>{
-    if (!jury||!running) { clearTimeout(juryRef.current); return; }
+  useEffect(() => {
+    if (!jury || !running) { clearTimeout(juryRef.current); return; }
     const scheduleNext = () => {
-      juryRef.current = setTimeout(()=>{
-        const msg = JURY_MSGS[Math.floor(Math.random()*JURY_MSGS.length)];
+      juryRef.current = setTimeout(() => {
+        const msg = JURY_MSGS[Math.floor(Math.random() * JURY_MSGS.length)];
         setToast(msg);
-        setTimeout(()=>setToast(null),3200);
+        setTimeout(() => setToast(null), 3200);
         scheduleNext();
-      }, 18000+Math.random()*35000);
+      }, 18000 + Math.random() * 35000);
     };
     scheduleNext();
-    return ()=>clearTimeout(juryRef.current);
-  },[jury,running]);
+    return () => clearTimeout(juryRef.current);
+  }, [jury, running]);
+
+  const pickScenario = (excludeId) => {
+    const available = SCENARIOS.filter(s => s.id !== excludeId);
+    return available[Math.floor(Math.random() * available.length)];
+  };
 
   const startSession = () => {
-    const scenario = SCENARIOS[Math.floor(Math.random()*SCENARIOS.length)];
+    const scenario = SCENARIOS[Math.floor(Math.random() * SCENARIOS.length)];
     setSc(scenario); setPhase('p1');
     setRem(TIMER_SEC); setDone(false); setRunning(true);
     setChk1(Array(CHECKLIST_P1.length).fill(false));
     setChk2(Array(CHECKLIST_P2.length).fill(false));
-    setActiveQ(0); setToast(null);
+    setChkC(Array(CHECKLIST_C.length).fill(false));
+    setFinalScore(0); setToast(null);
+  };
+
+  const changeSubject = () => {
+    clearInterval(timerRef.current); clearTimeout(juryRef.current);
+    const scenario = pickScenario(sc ? sc.id : null);
+    setSc(scenario); setRem(TIMER_SEC); setDone(false); setRunning(false);
+    setChk1(Array(CHECKLIST_P1.length).fill(false));
+    setChk2(Array(CHECKLIST_P2.length).fill(false));
+    setChkC(Array(CHECKLIST_C.length).fill(false));
+    setToast(null);
   };
 
   const toCorr1 = () => { clearInterval(timerRef.current); clearTimeout(juryRef.current); setRunning(false); setToast(null); setPhase('correction1'); };
-  const toP2 = () => { setPhase('p2'); setRem(TIMER_SEC); setDone(false); setRunning(true); setActiveQ(0); };
+  const toP2 = () => { setPhase('p2'); setRem(TIMER_SEC); setDone(false); setRunning(true); };
   const toCorr2 = () => { clearInterval(timerRef.current); clearTimeout(juryRef.current); setRunning(false); setPhase('correction2'); };
 
   const finish = () => {
-    const c1 = chk1.filter(Boolean).length;
-    const c2 = chk2.filter(Boolean).length;
-    const score = Math.round((c1+c2)/(CHECKLIST_P1.length+CHECKLIST_P2.length)*100);
+    const p1 = CHECKLIST_P1.reduce((a, item, i) => a + (chk1[i] ? item.max : 0), 0);
+    const p2 = CHECKLIST_P2.reduce((a, item, i) => a + (chk2[i] ? item.max : 0), 0);
+    const c  = CHECKLIST_C.reduce((a, item, i) => a + (chkC[i] ? item.max : 0), 0);
+    const total = Math.round((p1 + p2 + c) * 10) / 10;
+    const scorePct = Math.round(total / 20 * 100);
+    setFinalScore(total);
     setPhase('result');
-    onDone({ scenarioId:sc.id, score, c1, c2, date:new Date().toISOString() });
+    onDone({ scenarioId: sc.id, score: scorePct, date: new Date().toISOString() });
   };
 
   const reset = () => { clearInterval(timerRef.current); clearTimeout(juryRef.current); setPhase('idle'); setSc(null); setRunning(false); setDone(false); };
 
-  if (phase==='idle') return (
-    <div style={{display:'flex',flexDirection:'column',gap:16}} className="anim-up">
+  if (phase === 'idle') return (
+    <div style={{display:'flex', flexDirection:'column', gap:16}} className="anim-up">
       <div className="card" style={{padding:'20px 16px'}}>
-        <div style={{fontFamily:'Playfair Display, serif',fontWeight:700,fontSize:20,color:'#1B2A4A',marginBottom:6}}>L'Arène de Simulation</div>
-        <p style={{fontSize:13,color:'#6B7280',lineHeight:1.6,marginBottom:20}}>Lance une simulation complète. Tu auras 5 minutes par partie pour t'exprimer à voix haute.</p>
-        <div style={{background:'#FAEDB5',borderRadius:14,padding:'14px',display:'flex',alignItems:'center',gap:12,marginBottom:20}}>
+        <div style={{fontFamily:'Playfair Display, serif', fontWeight:700, fontSize:20, color:'#1B2A4A', marginBottom:6}}>L'Arène de Simulation</div>
+        <p style={{fontSize:13, color:'#6B7280', lineHeight:1.6, marginBottom:20}}>Lance une simulation complète. Tu auras 5 minutes par partie pour t'exprimer à voix haute.</p>
+        <div style={{background:'#FAEDB5', borderRadius:14, padding:'14px', display:'flex', alignItems:'center', gap:12, marginBottom:20}}>
           <span style={{fontSize:24}}>⚔️</span>
           <div style={{flex:1}}>
-            <div style={{fontSize:13,fontWeight:600,color:'#1B2A4A'}}>Mode Jury Sadique</div>
-            <div style={{fontSize:11,color:'#92400E',marginTop:2}}>Pop-ups psychologiques pendant le chrono</div>
+            <div style={{fontSize:13, fontWeight:600, color:'#1B2A4A'}}>Mode Jury Sadique</div>
+            <div style={{fontSize:11, color:'#92400E', marginTop:2}}>Pop-ups psychologiques pendant le chrono</div>
           </div>
-          <div className={`toggle-track ${jury?'on':''}`} onClick={()=>setJury(!jury)}>
+          <div className={`toggle-track ${jury?'on':''}`} onClick={() => setJury(!jury)}>
             <div className="toggle-thumb"/>
           </div>
         </div>
         <button className="btn btn-navy" onClick={startSession}>🎯  Lancer un sujet aléatoire</button>
       </div>
-      <div className="card" style={{padding:'16px',background:'#F8F6F1',border:'1px solid #E5E0D4'}}>
-        <div style={{fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.08em',color:'#9CA3AF',marginBottom:8}}>Rappel du déroulé</div>
+      <div className="card" style={{padding:'16px', background:'#F8F6F1', border:'1px solid #E5E0D4'}}>
+        <div style={{fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.08em', color:'#9CA3AF', marginBottom:8}}>Rappel du déroulé · Total sur 20 pts</div>
         {[
-          {emoji:'🎤',text:'Partie 1 — Monologue (5 min chrono)'},
-          {emoji:'✅',text:'Auto-évaluation & Correction P1'},
-          {emoji:'🎭',text:'Partie 2 — Questions jury (5 min chrono)'},
-          {emoji:'🏁',text:'Auto-évaluation, Ripostes & Score final'},
-        ].map((s,i)=>(
-          <div key={i} style={{display:'flex',alignItems:'center',gap:10,padding:'6px 0',borderBottom:i<3?'1px solid #EDE8DE':'none'}}>
+          {emoji:'🎤', text:'Partie 1 — Monologue (5 min) · /10 pts'},
+          {emoji:'✅', text:'Auto-évaluation & Correction P1'},
+          {emoji:'🎭', text:'Partie 2 — Entretien jury (5 min) · /8 pts'},
+          {emoji:'🏁', text:'Auto-évaluation P2 + Communication · /2 pts'},
+        ].map((s, i) => (
+          <div key={i} style={{display:'flex', alignItems:'center', gap:10, padding:'6px 0', borderBottom: i < 3 ? '1px solid #EDE8DE' : 'none'}}>
             <span>{s.emoji}</span>
-            <span style={{fontSize:12,color:'#4B5563'}}>{s.text}</span>
+            <span style={{fontSize:12, color:'#4B5563'}}>{s.text}</span>
           </div>
         ))}
       </div>
     </div>
   );
 
-  if (phase==='p1') return (
-    <div style={{display:'flex',flexDirection:'column',gap:14}} className="anim-up">
+  if (phase === 'p1') return (
+    <div style={{display:'flex', flexDirection:'column', gap:14}} className="anim-up">
       {toast && (
         <div className="jury-toast">
-          <div style={{background:'white',border:'1px solid #FECACA',borderRadius:20,padding:'10px 18px',boxShadow:'0 8px 24px rgba(0,0,0,.12)',display:'flex',alignItems:'center',gap:8}}>
+          <div style={{background:'white', border:'1px solid #FECACA', borderRadius:20, padding:'10px 18px', boxShadow:'0 8px 24px rgba(0,0,0,.12)', display:'flex', alignItems:'center', gap:8}}>
             <span style={{fontSize:20}}>{toast.icon}</span>
-            <span style={{fontSize:13,fontWeight:600,color:'#B91C1C'}}>{toast.text}</span>
+            <span style={{fontSize:13, fontWeight:600, color:'#B91C1C'}}>{toast.text}</span>
           </div>
         </div>
       )}
-      <div className="card" style={{padding:'14px 16px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+      <div className="card" style={{padding:'14px 16px', display:'flex', alignItems:'center', justifyContent:'space-between'}}>
         <div>
-          <div style={{fontSize:10,color:'#9CA3AF',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.07em'}}>Partie 1 · Monologue</div>
-          <div style={{fontFamily:'Playfair Display, serif',fontWeight:700,fontSize:15,color:'#1B2A4A',marginTop:2}}>{sc.titre}</div>
+          <div style={{fontSize:10, color:'#9CA3AF', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.07em'}}>Partie 1 · Monologue · /10 pts</div>
+          <div style={{fontFamily:'Playfair Display, serif', fontWeight:700, fontSize:15, color:'#1B2A4A', marginTop:2}}>{sc.titre}</div>
         </div>
         <span style={{fontSize:30}}>{sc.emoji}</span>
       </div>
-      <div className="card" style={{padding:'20px',display:'flex',justifyContent:'center'}}>
+      <div className="card" style={{padding:'20px', display:'flex', justifyContent:'center'}}>
         <CircularTimer total={TIMER_SEC} remaining={rem} running={running}/>
       </div>
       <div className="card" style={{padding:'16px'}}>
-        <div style={{fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.07em',color:'#9CA3AF',marginBottom:8}}>📋 Énoncé</div>
-        <p style={{fontSize:13,color:'#1B2A4A',lineHeight:1.65}}>{sc.enonce}</p>
+        <div style={{fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.07em', color:'#9CA3AF', marginBottom:8}}>📋 Énoncé</div>
+        <p style={{fontSize:13, color:'#1B2A4A', lineHeight:1.65}}>{sc.enonce}</p>
       </div>
       {done && (
-        <div style={{background:'#FEF2F2',border:'1px solid #FECACA',borderRadius:14,padding:'12px 16px',textAlign:'center'}}>
-          <span style={{fontSize:13,fontWeight:600,color:'#B91C1C'}}>⏰ Temps écoulé ! Passe à la correction.</span>
+        <div style={{background:'#FEF2F2', border:'1px solid #FECACA', borderRadius:14, padding:'12px 16px', textAlign:'center'}}>
+          <span style={{fontSize:13, fontWeight:600, color:'#B91C1C'}}>⏰ Temps écoulé ! Passe à la correction.</span>
         </div>
       )}
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
-        <button className="btn btn-ghost" onClick={()=>setRunning(!running)} style={{color:running?'#A83232':'#5C7A62'}}>
+      <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:10}}>
+        <button className="btn btn-ghost" onClick={() => setRunning(!running)} style={{color: running ? '#A83232' : '#5C7A62'}}>
           {running ? '⏸  Pause' : '▶️  Reprendre'}
         </button>
         <button className="btn btn-sage" onClick={toCorr1}>✅  Voir Correction</button>
       </div>
+      <button onClick={changeSubject} style={{padding:'10px', borderRadius:12, fontSize:13, fontWeight:600, border:'1px dashed #D1D5DB', background:'transparent', color:'#9CA3AF', cursor:'pointer', fontFamily:'DM Sans, sans-serif'}}>
+        🔄  Changer de sujet (sans comptabiliser)
+      </button>
     </div>
   );
 
-  if (phase==='correction1') return (
-    <div style={{display:'flex',flexDirection:'column',gap:14}} className="anim-side">
-      <div className="card" style={{padding:'14px 16px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+  if (phase === 'correction1') return (
+    <div style={{display:'flex', flexDirection:'column', gap:14}} className="anim-side">
+      <div className="card" style={{padding:'14px 16px', display:'flex', alignItems:'center', justifyContent:'space-between'}}>
         <div>
-          <div style={{fontSize:10,color:'#9CA3AF',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.07em'}}>Correction · Partie 1</div>
-          <div style={{fontFamily:'Playfair Display, serif',fontWeight:700,fontSize:15,color:'#1B2A4A',marginTop:2}}>{sc.titre}</div>
+          <div style={{fontSize:10, color:'#9CA3AF', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.07em'}}>Correction · Partie 1 · /10 pts</div>
+          <div style={{fontFamily:'Playfair Display, serif', fontWeight:700, fontSize:15, color:'#1B2A4A', marginTop:2}}>{sc.titre}</div>
         </div>
         <span style={{fontSize:30}}>{sc.emoji}</span>
       </div>
       <div className="card" style={{padding:'16px'}}>
-        <div style={{fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.07em',color:'#1B2A4A',marginBottom:8}}>💡 Hypothèse idéale</div>
-        <div style={{borderRadius:10,padding:'12px',background:'#FAEDB5'}}>
-          <p style={{fontSize:13,color:'#1B2A4A',fontWeight:500,lineHeight:1.6}}>{sc.hypothese}</p>
+        <div style={{fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.07em', color:'#1B2A4A', marginBottom:8}}>💡 Hypothèse idéale</div>
+        <div style={{borderRadius:10, padding:'12px', background:'#FAEDB5'}}>
+          <p style={{fontSize:13, color:'#1B2A4A', fontWeight:500, lineHeight:1.6}}>{sc.hypothese}</p>
         </div>
       </div>
       <div className="card" style={{padding:'16px'}}>
-        <div style={{fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.07em',color:'#1B2A4A',marginBottom:10}}>📖 Correction complète</div>
-        <p style={{fontSize:13,color:'#4B5563',lineHeight:1.7,whiteSpace:'pre-line'}}>{sc.correction_p1}</p>
+        <div style={{fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.07em', color:'#1B2A4A', marginBottom:10}}>📖 Correction complète</div>
+        <p style={{fontSize:13, color:'#4B5563', lineHeight:1.7, whiteSpace:'pre-line'}}>{sc.correction_p1}</p>
       </div>
       <div className="card" style={{padding:'16px'}}>
-        <div style={{fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.07em',color:'#1B2A4A',marginBottom:10}}>✅ Auto-évaluation Partie 1</div>
+        <div style={{fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.07em', color:'#1B2A4A', marginBottom:10}}>✅ Auto-évaluation Partie 1 · /10 pts</div>
         <Checklist items={CHECKLIST_P1} checked={chk1} onChange={setChk1}/>
       </div>
-      <button className="btn btn-navy" onClick={toP2}>➡️  Passer à la Partie 2 — Questions Jury</button>
+      <button className="btn btn-navy" onClick={toP2}>➡️  Passer à la Partie 2 — Entretien Jury</button>
     </div>
   );
 
-  if (phase==='p2') return (
-    <div style={{display:'flex',flexDirection:'column',gap:14}} className="anim-up">
-      <div className="card" style={{padding:'14px 16px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+  if (phase === 'p2') return (
+    <div style={{display:'flex', flexDirection:'column', gap:14}} className="anim-up">
+      <div className="card" style={{padding:'14px 16px', display:'flex', alignItems:'center', justifyContent:'space-between'}}>
         <div>
-          <div style={{fontSize:10,color:'#9CA3AF',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.07em'}}>Partie 2 · Questions Jury</div>
-          <div style={{fontFamily:'Playfair Display, serif',fontWeight:700,fontSize:15,color:'#1B2A4A',marginTop:2}}>{sc.titre}</div>
+          <div style={{fontSize:10, color:'#9CA3AF', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.07em'}}>Partie 2 · Entretien Jury · /8 pts</div>
+          <div style={{fontFamily:'Playfair Display, serif', fontWeight:700, fontSize:15, color:'#1B2A4A', marginTop:2}}>{sc.titre}</div>
         </div>
         <span style={{fontSize:30}}>{sc.emoji}</span>
       </div>
-      <div className="card" style={{padding:'20px',display:'flex',justifyContent:'center'}}>
+      <div className="card" style={{padding:'20px', display:'flex', justifyContent:'center'}}>
         <CircularTimer total={TIMER_SEC} remaining={rem} running={running}/>
       </div>
-      <div className="card" style={{padding:'16px'}}>
-        <div style={{fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.07em',color:'#9CA3AF',marginBottom:12}}>🎤 Questions du Jury — réponds à voix haute</div>
-        {sc.questions_jury.map((q,i)=>(
-          <div key={i} onClick={()=>setActiveQ(i)}
-            style={{padding:'12px 14px',borderRadius:12,marginBottom:8,cursor:'pointer',transition:'all .2s',
-              borderLeft:`4px solid ${i===activeQ?'#1B2A4A':'#E5E7EB'}`,
-              background:i===activeQ?'#EFF2F7':'#F9FAFB'}}>
-            <div style={{fontSize:10,fontWeight:700,color:'#9CA3AF',marginBottom:4}}>Question {i+1}</div>
-            <p style={{fontSize:13,color:'#1B2A4A',fontWeight:500,lineHeight:1.45}}>{q}</p>
-          </div>
-        ))}
+      <div className="card" style={{padding:'16px', background:'#F0F9FF', border:'1px solid #BAE6FD'}}>
+        <div style={{fontSize:12, fontWeight:700, color:'#0369A1', marginBottom:8}}>🎭 Mode Entretien Jury</div>
+        <p style={{fontSize:13, color:'#1B2A4A', lineHeight:1.6, marginBottom:12}}>Pose-toi tes propres questions à voix haute et réponds-y en continu. Évalue ta performance avec la checklist après.</p>
+        <div style={{padding:'10px 14px', background:'#fff', borderRadius:10, border:'1px solid #E0F2FE'}}>
+          <div style={{fontSize:11, fontWeight:700, color:'#0369A1', marginBottom:8}}>4 AXES ÉVALUÉS :</div>
+          {CHECKLIST_P2.map((item, i) => (
+            <div key={i} style={{fontSize:12, color:'#374151', padding:'3px 0', display:'flex', gap:6}}>
+              <span style={{fontWeight:700, color:'#1B2A4A', flexShrink:0}}>/{item.max}</span>
+              <span style={{fontWeight:600}}>{item.label}</span>
+            </div>
+          ))}
+        </div>
       </div>
       {done && (
-        <div style={{background:'#FEF2F2',border:'1px solid #FECACA',borderRadius:14,padding:'12px 16px',textAlign:'center'}}>
-          <span style={{fontSize:13,fontWeight:600,color:'#B91C1C'}}>⏰ Temps écoulé ! Passe à la correction.</span>
+        <div style={{background:'#FEF2F2', border:'1px solid #FECACA', borderRadius:14, padding:'12px 16px', textAlign:'center'}}>
+          <span style={{fontSize:13, fontWeight:600, color:'#B91C1C'}}>⏰ Temps écoulé ! Passe à l'évaluation.</span>
         </div>
       )}
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
-        <button className="btn btn-ghost" onClick={()=>setRunning(!running)} style={{color:running?'#A83232':'#5C7A62'}}>
+      <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:12}}>
+        <button className="btn btn-ghost" onClick={() => setRunning(!running)} style={{color: running ? '#A83232' : '#5C7A62'}}>
           {running ? '⏸  Pause' : '▶️  Reprendre'}
         </button>
-        <button className="btn btn-sage" onClick={toCorr2}>✅  Voir Correction P.2</button>
+        <button className="btn btn-sage" onClick={toCorr2}>✅  Auto-évaluation P.2</button>
       </div>
     </div>
   );
 
-  if (phase==='correction2') return (
-    <div style={{display:'flex',flexDirection:'column',gap:14}} className="anim-side">
-      <div className="card" style={{padding:'14px 16px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+  if (phase === 'correction2') return (
+    <div style={{display:'flex', flexDirection:'column', gap:14}} className="anim-side">
+      <div className="card" style={{padding:'14px 16px', display:'flex', alignItems:'center', justifyContent:'space-between'}}>
         <div>
-          <div style={{fontSize:10,color:'#9CA3AF',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.07em'}}>Correction · Partie 2</div>
-          <div style={{fontFamily:'Playfair Display, serif',fontWeight:700,fontSize:15,color:'#1B2A4A',marginTop:2}}>{sc.titre}</div>
+          <div style={{fontSize:10, color:'#9CA3AF', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.07em'}}>Évaluation Finale · /20 pts</div>
+          <div style={{fontFamily:'Playfair Display, serif', fontWeight:700, fontSize:15, color:'#1B2A4A', marginTop:2}}>{sc.titre}</div>
         </div>
         <span style={{fontSize:30}}>{sc.emoji}</span>
       </div>
       <div className="card" style={{padding:'16px'}}>
-        <div style={{fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.07em',color:'#1B2A4A',marginBottom:12}}>📖 Ripostes attendues</div>
-        {sc.ripostes.map((r,i)=>(
-          <div key={i} style={{marginBottom:12}}>
-            <div style={{fontSize:11,fontWeight:700,color:'#5C7A62',marginBottom:4}}>Pour la question {i+1} :</div>
-            <p style={{fontSize:13,color:'#4B5563',lineHeight:1.6}}>{r}</p>
-          </div>
-        ))}
-      </div>
-      <div className="card" style={{padding:'16px'}}>
-        <div style={{fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.07em',color:'#1B2A4A',marginBottom:10}}>✅ Auto-évaluation Partie 2</div>
+        <div style={{fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.07em', color:'#1B2A4A', marginBottom:10}}>🎭 Auto-évaluation Partie 2 · /8 pts</div>
         <Checklist items={CHECKLIST_P2} checked={chk2} onChange={setChk2}/>
       </div>
-      <button className="btn btn-navy" onClick={finish}>🏁  Terminer et enregistrer le score</button>
+      <div className="card" style={{padding:'16px', border:'1px solid #C9A84C33'}}>
+        <div style={{fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.07em', color:'#C9A84C', marginBottom:10}}>✨ Module C — Communication · /2 pts</div>
+        <Checklist items={CHECKLIST_C} checked={chkC} onChange={setChkC}/>
+      </div>
+      <button className="btn btn-navy" onClick={finish}>🏁  Calculer et enregistrer le score</button>
     </div>
   );
 
-  if (phase==='result') return (
-    <div style={{display:'flex',flexDirection:'column',gap:16}} className="anim-pop">
-      <div className="card" style={{padding:'30px 20px',textAlign:'center'}}>
-        <div style={{fontSize:40,marginBottom:10}}>🎉</div>
-        <div style={{fontFamily:'Playfair Display, serif',fontWeight:700,fontSize:22,color:'#1B2A4A',marginBottom:4}}>Simulation terminée</div>
-        <p style={{fontSize:13,color:'#6B7280',marginBottom:20}}>Voici ton score d'auto-évaluation pour ce scénario.</p>
-        <div style={{display:'flex',justifyContent:'center'}}>
-          <Gauge score={Math.round((chk1.filter(Boolean).length + chk2.filter(Boolean).length) / (CHECKLIST_P1.length + CHECKLIST_P2.length) * 100)} label="Score final" color="#5C7A62" />
+  if (phase === 'result') return (
+    <div style={{display:'flex', flexDirection:'column', gap:16}} className="anim-pop">
+      <div className="card" style={{padding:'30px 20px', textAlign:'center'}}>
+        <div style={{fontSize:40, marginBottom:10}}>🎉</div>
+        <div style={{fontFamily:'Playfair Display, serif', fontWeight:700, fontSize:22, color:'#1B2A4A', marginBottom:4}}>Simulation terminée !</div>
+        <p style={{fontSize:13, color:'#6B7280', marginBottom:20}}>Score d'auto-évaluation pour ce scénario.</p>
+        <div style={{background:'#F0FDF4', borderRadius:16, padding:'20px', marginBottom:16, border:'1px solid #BBF7D0'}}>
+          <div style={{fontSize:48, fontWeight:700, color:'#5C7A62', fontFamily:'Playfair Display, serif', lineHeight:1}}>{finalScore.toFixed(1)}</div>
+          <div style={{fontSize:16, color:'#6B7280', marginTop:4}}>points sur 20</div>
+          <div style={{fontSize:13, color:'#9CA3AF', marginTop:4}}>soit {Math.round(finalScore / 20 * 100)} %</div>
+        </div>
+        <div style={{display:'flex', justifyContent:'center'}}>
+          <Gauge score={Math.round(finalScore / 20 * 100)} label="Score global" color="#5C7A62"/>
         </div>
       </div>
       <button className="btn btn-navy" onClick={reset}>🏠  Retour à l'Arène</button>
@@ -1226,9 +1263,78 @@ function Arene({ onDone }) {
   return null;
 }
 
+
 /* ═══════════════════════════════════════════════════════
    MAIN APP
 ═══════════════════════════════════════════════════════ */
+function Notes() {
+  const [notes, setNotes] = useLS('oral_notes', []);
+  const [text, setText] = useState('');
+  const [editing, setEditing] = useState(null);
+
+  const addNote = () => {
+    if (!text.trim()) return;
+    setNotes(prev => [...prev, { id: Date.now(), content: text.trim(), date: new Date().toISOString() }]);
+    setText('');
+  };
+
+  const deleteNote = (id) => setNotes(prev => prev.filter(n => n.id !== id));
+
+  const startEdit = (note) => { setEditing(note.id); setText(note.content); };
+
+  const saveEdit = () => {
+    setNotes(prev => prev.map(n => n.id === editing ? {...n, content: text.trim(), date: new Date().toISOString()} : n));
+    setEditing(null); setText('');
+  };
+
+  return (
+    <div style={{display:'flex', flexDirection:'column', gap:12}} className="anim-up">
+      <div className="card" style={{padding:'16px', background:'linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)', border:'1px solid #C9A84C33'}}>
+        <div style={{fontFamily:'Playfair Display, serif', fontWeight:700, fontSize:18, color:'#1B2A4A', marginBottom:4}}>📌 Infos Dernière Minute</div>
+        <p style={{fontSize:13, color:'#6B7280'}}>Sauvegarde tes notes importantes. Tout est conservé entre les sessions.</p>
+      </div>
+      <div className="card" style={{padding:'16px'}}>
+        <div style={{fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.07em', color:'#9CA3AF', marginBottom:10}}>
+          {editing ? '✏️ Modifier la note' : '➕ Nouvelle note'}
+        </div>
+        <textarea value={text} onChange={e => setText(e.target.value)}
+          placeholder="Info importante, lexique, formule clé, piège jury…"
+          style={{width:'100%', minHeight:90, fontSize:13, padding:'10px 14px', borderRadius:10, border:'1px solid #E5E7EB', fontFamily:'DM Sans, sans-serif', color:'#1B2A4A', outline:'none', resize:'vertical', background:'#F9FAFB', lineHeight:1.6}}
+        />
+        <div style={{display:'flex', gap:8, marginTop:10}}>
+          <button className="btn btn-navy" onClick={editing ? saveEdit : addNote} style={{flex:1}}>
+            {editing ? '✅  Sauvegarder' : '➕  Ajouter'}
+          </button>
+          {editing && (
+            <button className="btn btn-ghost" onClick={() => { setEditing(null); setText(''); }} style={{flex:1}}>
+              ✖️  Annuler
+            </button>
+          )}
+        </div>
+      </div>
+      {notes.length === 0 ? (
+        <div className="card" style={{padding:'40px 20px', textAlign:'center', color:'#9CA3AF'}}>
+          <div style={{fontSize:36, marginBottom:8}}>📝</div>
+          <div style={{fontSize:13}}>Aucune note pour le moment.</div>
+        </div>
+      ) : (
+        [...notes].reverse().map(note => (
+          <div key={note.id} className="card" style={{padding:'14px 16px'}}>
+            <p style={{fontSize:13, color:'#1B2A4A', lineHeight:1.7, marginBottom:10, whiteSpace:'pre-wrap'}}>{note.content}</p>
+            <div style={{display:'flex', alignItems:'center', justifyContent:'space-between'}}>
+              <span style={{fontSize:11, color:'#9CA3AF'}}>{new Date(note.date).toLocaleDateString('fr-FR', {day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'})}</span>
+              <div style={{display:'flex', gap:8}}>
+                <button onClick={() => startEdit(note)} style={{fontSize:12, padding:'5px 12px', borderRadius:8, border:'1px solid #E5E7EB', background:'#F9FAFB', cursor:'pointer', fontFamily:'DM Sans, sans-serif', color:'#1B2A4A', fontWeight:600}}>✏️ Modifier</button>
+                <button onClick={() => deleteNote(note.id)} style={{fontSize:12, padding:'5px 12px', borderRadius:8, border:'none', background:'#FEE2E2', cursor:'pointer', fontFamily:'DM Sans, sans-serif', color:'#B91C1C', fontWeight:600}}>🗑️</button>
+              </div>
+            </div>
+          </div>
+        ))
+      )}
+    </div>
+  );
+}
+
 
 function App() {
   const [tab, setTab] = useState('dashboard');
@@ -1268,6 +1374,8 @@ function App() {
         {tab==='grimoire'   && <Grimoire/>}
         {tab==='repertoire' && <Repertoire mastery={mastery} setMastery={updateMastery}/>}
         {tab==='arene'      && <Arene onDone={handleDone}/>}
+        {tab==='notes'      && <Notes/>}
+
       </main>
 
       <nav style={{position:'fixed',bottom:0,left:0,right:0,background:'#fff',boxShadow:'0 -2px 10px rgba(27,42,74,.05)',display:'flex',justifyContent:'space-around',padding:'10px 16px 24px',zIndex:100}}>
@@ -1276,6 +1384,8 @@ function App() {
           {id:'grimoire',  icon:'📚', label:'Grimoire'},
           {id:'repertoire',icon:'📂', label:'Sujets'},
           {id:'arene',     icon:'⚔️', label:'Arène'},
+      {id:'notes',     icon:'📌', label:'Notes'},
+
         ].map(t=>(
           <button key={t.id} onClick={()=>setTab(t.id)} className={`nav-btn ${tab===t.id?'active':''}`}
             style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4,background:'none',border:'none',cursor:'pointer',opacity:tab===t.id?1:0.5}}>
